@@ -1,0 +1,325 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: #000;
+    min-height: 100vh;
+    overflow: hidden;
+}
+
+/* Immagine centrata */
+#center-logo {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 200;
+    pointer-events: none;
+    mix-blend-mode: lighten;
+}
+
+#center-logo img {
+    max-width: 300px;
+    max-height: 300px;
+    width: auto;
+    height: auto;
+    filter: contrast(1.2) brightness(1.1);
+    animation: logoFlicker 0.1s infinite;
+}
+
+@keyframes logoFlicker {
+    0%, 100% { 
+        opacity: 0.85;
+        filter: contrast(1.2) brightness(1.1);
+    }
+    25% { 
+        opacity: 0.9;
+        filter: contrast(1.3) brightness(1.15);
+    }
+    50% { 
+        opacity: 0.8;
+        filter: contrast(1.15) brightness(1.05);
+    }
+    75% { 
+        opacity: 0.88;
+        filter: contrast(1.25) brightness(1.1);
+    }
+}
+
+/* Glitch pesante occasionale */
+#center-logo.heavy-glitch img {
+    animation: heavyGlitch 0.15s steps(2) forwards !important;
+}
+
+@keyframes heavyGlitch {
+    0% {
+        transform: translate(0, 0) skewX(0deg);
+        filter: contrast(1.2) brightness(1.1);
+        clip-path: inset(0 0 0 0);
+    }
+    10% {
+        transform: translate(-10px, 2px) skewX(-5deg);
+        filter: contrast(2) brightness(1.5) saturate(0);
+        clip-path: inset(20% 0 30% 0);
+    }
+    20% {
+        transform: translate(8px, -3px) skewX(8deg);
+        filter: contrast(0.5) brightness(2);
+        clip-path: inset(50% 0 10% 0);
+    }
+    30% {
+        transform: translate(-5px, 0) skewX(-3deg);
+        filter: contrast(3) brightness(0.8);
+        clip-path: inset(10% 0 60% 0);
+    }
+    40% {
+        transform: translate(12px, 5px) skewX(10deg);
+        filter: contrast(1) brightness(3) saturate(0);
+        clip-path: inset(40% 0 20% 0);
+    }
+    50% {
+        transform: translate(-8px, -2px) skewX(-8deg);
+        filter: contrast(2.5) brightness(0.5);
+        clip-path: inset(5% 0 70% 0);
+    }
+    60% {
+        transform: translate(5px, 3px) skewX(5deg);
+        filter: contrast(0.8) brightness(2.5);
+        clip-path: inset(60% 0 5% 0);
+    }
+    70% {
+        transform: translate(-3px, -5px) skewX(-2deg);
+        filter: contrast(1.8) brightness(1.8) saturate(0);
+        clip-path: inset(25% 0 40% 0);
+    }
+    80% {
+        transform: translate(6px, 1px) skewX(4deg);
+        filter: contrast(2) brightness(1.2);
+        clip-path: inset(45% 0 15% 0);
+    }
+    90% {
+        transform: translate(-2px, 2px) skewX(-1deg);
+        filter: contrast(1.5) brightness(1.3);
+        clip-path: inset(10% 0 50% 0);
+    }
+    100% {
+        transform: translate(0, 0) skewX(0deg);
+        filter: contrast(1.2) brightness(1.1);
+        clip-path: inset(0 0 0 0);
+    }
+}
+
+/* Canvas del rumore granulare - MOLTO più visibile */
+#noise {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 250;
+    opacity: 0.6;
+    mix-blend-mode: screen;
+}
+
+/* Canvas psichedelico */
+#psychedelic {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 5;
+    opacity: 0.8;
+}
+
+/* Container delle scie di disturbo */
+#distortion-trails {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 300;
+}
+
+/* Singola scia di disturbo - PIÙ GRANDE */
+.distortion-trail {
+    position: absolute;
+    pointer-events: none;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.4),
+        rgba(200, 200, 200, 0.3),
+        rgba(150, 150, 150, 0.2),
+        transparent
+    );
+    transform: translateX(-50%) translateY(-50%);
+    animation: distortionFade 1.5s ease-out forwards;
+    filter: blur(1px);
+}
+
+@keyframes distortionFade {
+    0% {
+        opacity: 1;
+        transform: translateX(-50%) translateY(-50%) scaleX(1) scaleY(1);
+    }
+    50% {
+        opacity: 0.8;
+        transform: translateX(-50%) translateY(-50%) scaleX(2) scaleY(1.5);
+    }
+    100% {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-50%) scaleX(3) scaleY(2);
+    }
+}
+
+/* Linee di scansione TV animate */
+#scanlines {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 200%;
+    background: repeating-linear-gradient(
+        0deg,
+        rgba(0, 0, 0, 0.3),
+        rgba(0, 0, 0, 0.3) 1px,
+        transparent 1px,
+        transparent 3px
+    );
+    pointer-events: none;
+    z-index: 90;
+    animation: scanlineMove 0.1s linear infinite;
+}
+
+@keyframes scanlineMove {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(-3px); }
+}
+
+/* Bande di interferenza */
+#interference-bands {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 60;
+    background: transparent;
+}
+
+.interference-band {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    background: linear-gradient(
+        180deg,
+        transparent,
+        rgba(255, 255, 255, 0.12),
+        rgba(200, 200, 200, 0.08),
+        transparent
+    );
+    animation: bandMove 0.8s ease-out forwards;
+    filter: blur(2px);
+}
+
+@keyframes bandMove {
+    0% {
+        opacity: 1;
+        transform: scaleY(1);
+    }
+    100% {
+        opacity: 0;
+        transform: scaleY(2);
+    }
+}
+
+/* Effetto vignette più intenso */
+body::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(
+        ellipse at center,
+        transparent 0%,
+        transparent 30%,
+        rgba(0, 0, 0, 0.7) 100%
+    );
+    pointer-events: none;
+    z-index: 80;
+}
+
+/* Effetto CRT curvatura */
+body::before {
+    content: '';
+    position: fixed;
+    top: -5%;
+    left: -5%;
+    width: 110%;
+    height: 110%;
+    background: radial-gradient(
+        ellipse at center,
+        transparent 60%,
+        rgba(0, 0, 0, 0.4) 100%
+    );
+    pointer-events: none;
+    z-index: 95;
+    border-radius: 50% / 10%;
+}
+
+/* Rolling bar effect */
+.rolling-bar {
+    position: fixed;
+    left: 0;
+    width: 100%;
+    height: 100px;
+    background: linear-gradient(
+        180deg,
+        transparent,
+        rgba(255, 255, 255, 0.05),
+        rgba(255, 255, 255, 0.1),
+        rgba(255, 255, 255, 0.05),
+        transparent
+    );
+    pointer-events: none;
+    z-index: 70;
+    animation: rollDown 3s linear infinite;
+}
+
+@keyframes rollDown {
+    0% { top: -100px; }
+    100% { top: 100%; }
+}
+
+/* Glitch blocks */
+.glitch-block {
+    position: absolute;
+    pointer-events: none;
+    animation: glitchBlockFade 0.3s ease-out forwards;
+}
+
+@keyframes glitchBlockFade {
+    0% {
+        opacity: 1;
+        transform: scaleX(1);
+    }
+    50% {
+        opacity: 0.8;
+        transform: scaleX(1.2) translateX(10px);
+    }
+    100% {
+        opacity: 0;
+        transform: scaleX(0.5) translateX(-20px);
+    }
+}
