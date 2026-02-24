@@ -264,6 +264,8 @@ document.addEventListener('mousemove', function(e) {
 let lastTouchX = 0;
 let lastTouchY = 0;
 let lastTouchTime = 0;
+let activeTrails = 0;
+const MAX_ACTIVE_TRAILS = 15; // Limita elementi DOM attivi
 
 document.addEventListener('touchstart', function(e) {
     if (e.touches.length > 0) {
@@ -281,9 +283,10 @@ document.addEventListener('touchmove', function(e) {
         const velocityY = touch.clientY - lastTouchY;
         const speed = Math.sqrt(velocityX * velocityX + velocityY * velocityY);
         
-        // Stesso comportamento del mouse
-        if (speed > 5 && currentTime - lastTouchTime > 40) {
-            createMultipleTrails(touch.clientX, touch.clientY, velocityX, velocityY);
+        // Throttle più aggressivo su mobile (100ms invece di 40ms)
+        // e limita elementi attivi per evitare freeze
+        if (speed > 8 && currentTime - lastTouchTime > 100 && activeTrails < MAX_ACTIVE_TRAILS) {
+            createMobileTrail(touch.clientX, touch.clientY, velocityX, velocityY);
             lastTouchTime = currentTime;
         }
         
@@ -291,6 +294,33 @@ document.addEventListener('touchmove', function(e) {
         lastTouchY = touch.clientY;
     }
 }, { passive: true });
+
+// Versione semplificata per mobile (meno elementi DOM)
+function createMobileTrail(x, y, velocityX, velocityY) {
+    activeTrails++;
+    
+    const trail = document.createElement('div');
+    trail.className = 'distortion-trail';
+    
+    const speed = Math.sqrt(velocityX * velocityX + velocityY * velocityY);
+    const width = Math.min(400, Math.max(100, speed * 4));
+    const height = Math.random() * 20 + 10;
+    
+    trail.style.left = x + 'px';
+    trail.style.top = y + 'px';
+    trail.style.width = width + 'px';
+    trail.style.height = height + 'px';
+    
+    const brightness = Math.random() * 40 + 60;
+    trail.style.background = 'linear-gradient(90deg, transparent, rgba(' + brightness + ',' + brightness + ',' + brightness + ', 0.4), transparent)';
+    
+    trailsContainer.appendChild(trail);
+    
+    setTimeout(function() {
+        trail.remove();
+        activeTrails--;
+    }, 600);
+}
 
 // ============================================
 // EFFETTI CASUALI AUTOMATICI
