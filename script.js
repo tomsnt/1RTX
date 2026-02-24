@@ -354,10 +354,10 @@ function createRollingBar() {
 // TIMER CIFRATO - Countdown con simboli
 // ============================================
 
-// Mappa cifratura: ogni numero diventa un simbolo
-// 0=Ø 1=I 2=Z 3=Ξ 4=Ψ 5=Σ 6=б 7=Λ 8=∞ 9=Φ
-// La chiave è: "ØIZΞΨΣGΛ∞Φ" (0123456789)
-const cipherMap = {
+// Mappa cifratura COMPLESSA:
+// Decine: Ø=0 I=1 Z=2 Ξ=3 Ψ=4 Σ=5 G=6 Λ=7 ∞=8 Φ=9
+// Unità:  Δ=0 Ω=1 Π=2 Ж=3 Ҫ=4 Ɣ=5 Ӿ=6 ₪=7 Ƨ=8 ᛉ=9
+const cipherTens = {
     '0': 'Ø',
     '1': 'I',
     '2': 'Z',
@@ -370,11 +370,25 @@ const cipherMap = {
     '9': 'Φ'
 };
 
+const cipherUnits = {
+    '0': 'Δ',
+    '1': 'Ω',
+    '2': 'Π',
+    '3': 'Ж',
+    '4': 'Ҫ',
+    '5': 'Ɣ',
+    '6': 'Ӿ',
+    '7': '₪',
+    '8': 'Ƨ',
+    '9': 'ᛉ'
+};
+
 // Data target del countdown (27 febbraio 2026 alle 21:00)
 const targetDate = new Date('2026-02-27T21:00:00');
 
 function encryptNumber(num) {
-    return String(num).padStart(2, '0').split('').map(d => cipherMap[d]).join('');
+    const str = String(num).padStart(2, '0');
+    return cipherTens[str[0]] + cipherUnits[str[1]];
 }
 
 function updateEncryptedTimer() {
@@ -382,7 +396,7 @@ function updateEncryptedTimer() {
     const diff = targetDate - now;
     
     if (diff <= 0) {
-        document.getElementById('timer-display').textContent = 'ØØ:ØØ:ØØ:ØØ';
+        document.getElementById('timer-display').textContent = 'ØΔ:ØΔ:ØΔ:ØΔ';
         return;
     }
     
