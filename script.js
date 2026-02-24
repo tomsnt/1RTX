@@ -265,7 +265,7 @@ let lastTouchX = 0;
 let lastTouchY = 0;
 let lastTouchTime = 0;
 let activeTrails = 0;
-const MAX_ACTIVE_TRAILS = 15; // Limita elementi DOM attivi
+const MAX_ACTIVE_TRAILS = 25; // Limita elementi DOM attivi
 
 document.addEventListener('touchstart', function(e) {
     if (e.touches.length > 0) {
@@ -283,9 +283,8 @@ document.addEventListener('touchmove', function(e) {
         const velocityY = touch.clientY - lastTouchY;
         const speed = Math.sqrt(velocityX * velocityX + velocityY * velocityY);
         
-        // Throttle più aggressivo su mobile (100ms invece di 40ms)
-        // e limita elementi attivi per evitare freeze
-        if (speed > 8 && currentTime - lastTouchTime > 100 && activeTrails < MAX_ACTIVE_TRAILS) {
+        // Throttle bilanciato (60ms) con limite elementi
+        if (speed > 5 && currentTime - lastTouchTime > 60 && activeTrails < MAX_ACTIVE_TRAILS) {
             createMobileTrail(touch.clientX, touch.clientY, velocityX, velocityY);
             lastTouchTime = currentTime;
         }
@@ -295,7 +294,7 @@ document.addEventListener('touchmove', function(e) {
     }
 }, { passive: true });
 
-// Versione semplificata per mobile (meno elementi DOM)
+// Versione ottimizzata per mobile
 function createMobileTrail(x, y, velocityX, velocityY) {
     activeTrails++;
     
@@ -303,23 +302,25 @@ function createMobileTrail(x, y, velocityX, velocityY) {
     trail.className = 'distortion-trail';
     
     const speed = Math.sqrt(velocityX * velocityX + velocityY * velocityY);
-    const width = Math.min(400, Math.max(100, speed * 4));
-    const height = Math.random() * 20 + 10;
+    const width = Math.min(600, Math.max(150, speed * 6));
+    const height = Math.random() * 25 + 12;
+    
+    const offsetY = (Math.random() - 0.5) * 50;
     
     trail.style.left = x + 'px';
-    trail.style.top = y + 'px';
+    trail.style.top = (y + offsetY) + 'px';
     trail.style.width = width + 'px';
     trail.style.height = height + 'px';
     
     const brightness = Math.random() * 40 + 60;
-    trail.style.background = 'linear-gradient(90deg, transparent, rgba(' + brightness + ',' + brightness + ',' + brightness + ', 0.4), transparent)';
+    trail.style.background = 'linear-gradient(90deg, transparent, rgba(' + brightness + ',' + brightness + ',' + brightness + ', 0.5), rgba(255, 255, 255, 0.4), transparent)';
     
     trailsContainer.appendChild(trail);
     
     setTimeout(function() {
         trail.remove();
         activeTrails--;
-    }, 600);
+    }, 800);
 }
 
 // ============================================
