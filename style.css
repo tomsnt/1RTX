@@ -125,9 +125,9 @@ body {
 
 #timer-display {
     font-family: 'Arial', 'Helvetica', sans-serif;
-    font-size: 24px;
+    font-size: 18px;
     font-weight: bold;
-    letter-spacing: 3px;
+    letter-spacing: 2px;
     color: #fff;
     text-shadow: 
         0 0 10px rgba(255, 255, 255, 0.9),
@@ -141,13 +141,17 @@ body {
 
 /* Mobile */
 @media (max-width: 768px) {
+    #center-logo {
+        top: 40%;
+    }
+    
     #encrypted-timer {
-        top: calc(50% + 140px);
+        top: calc(40% + 120px);
     }
     
     #timer-display {
-        font-size: 20px;
-        letter-spacing: 2px;
+        font-size: 14px;
+        letter-spacing: 1px;
     }
 }
 
