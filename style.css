@@ -112,6 +112,37 @@ body {
     }
 }
 
+/* Timer cifrato */
+#encrypted-timer {
+    position: fixed;
+    top: calc(50% + 180px);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 200;
+    pointer-events: none;
+    text-align: center;
+}
+
+#timer-display {
+    font-family: 'Courier New', monospace;
+    font-size: 28px;
+    letter-spacing: 4px;
+    color: #fff;
+    text-shadow: 
+        0 0 10px rgba(255, 255, 255, 0.8),
+        0 0 20px rgba(255, 255, 255, 0.4),
+        0 0 30px rgba(255, 255, 255, 0.2);
+    animation: timerFlicker 0.15s infinite;
+    opacity: 0.9;
+}
+
+@keyframes timerFlicker {
+    0%, 100% { opacity: 0.9; }
+    25% { opacity: 0.85; }
+    50% { opacity: 0.95; }
+    75% { opacity: 0.8; }
+}
+
 /* Canvas del rumore granulare - MOLTO più visibile */
 #noise {
     position: fixed;

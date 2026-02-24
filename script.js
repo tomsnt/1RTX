@@ -351,6 +351,59 @@ function createRollingBar() {
 // Le onde di distorsione orizzontali sono integrate nel rumore
 
 // ============================================
+// TIMER CIFRATO - Countdown con simboli
+// ============================================
+
+// Mappa cifratura: ogni numero diventa un simbolo
+// 0=Ø 1=I 2=Z 3=Ξ 4=Ψ 5=Σ 6=б 7=Λ 8=∞ 9=Φ
+// La chiave è: "ØIZΞΨΣGΛ∞Φ" (0123456789)
+const cipherMap = {
+    '0': 'Ø',
+    '1': 'I',
+    '2': 'Z',
+    '3': 'Ξ',
+    '4': 'Ψ',
+    '5': 'Σ',
+    '6': 'G',
+    '7': 'Λ',
+    '8': '∞',
+    '9': 'Φ'
+};
+
+// Data target del countdown (27 febbraio 2026 alle 21:00)
+const targetDate = new Date('2026-02-27T21:00:00');
+
+function encryptNumber(num) {
+    return String(num).padStart(2, '0').split('').map(d => cipherMap[d]).join('');
+}
+
+function updateEncryptedTimer() {
+    const now = new Date();
+    const diff = targetDate - now;
+    
+    if (diff <= 0) {
+        document.getElementById('timer-display').textContent = 'ØØ:ØØ:ØØ:ØØ';
+        return;
+    }
+    
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+    
+    const encrypted = encryptNumber(days) + ':' + 
+                      encryptNumber(hours) + ':' + 
+                      encryptNumber(minutes) + ':' + 
+                      encryptNumber(seconds);
+    
+    document.getElementById('timer-display').textContent = encrypted;
+}
+
+// Aggiorna il timer ogni secondo
+setInterval(updateEncryptedTimer, 1000);
+updateEncryptedTimer();
+
+// ============================================
 // GLITCH PESANTE OCCASIONALE SUL LOGO
 // ============================================
 
