@@ -146,7 +146,8 @@ body {
     }
     
     #encrypted-timer {
-        top: calc(40% + 160px);
+        top: auto;
+        bottom: 20vh;
     }
     
     #timer-display {
