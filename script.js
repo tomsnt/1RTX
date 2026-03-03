@@ -7,10 +7,25 @@ const noiseCtx = noiseCanvas.getContext('2d');
 const psychedelicCanvas = document.getElementById('psychedelic');
 const psychedelicCtx = psychedelicCanvas.getContext('2d');
 
-// Mouse
+// Mouse e scia
 let mouseX = -1000;
 let mouseY = -1000;
-const magnetRadius = 250;
+const magnetRadius = 200;
+const trailLength = 12;
+const trail = [];
+for (let i = 0; i < trailLength; i++) {
+    trail.push({ x: -1000, y: -1000 });
+}
+
+function updateTrail() {
+    // Shifta la scia
+    for (let i = trailLength - 1; i > 0; i--) {
+        trail[i].x = trail[i - 1].x;
+        trail[i].y = trail[i - 1].y;
+    }
+    trail[0].x = mouseX;
+    trail[0].y = mouseY;
+}
 
 function resizeCanvases() {
     noiseCanvas.width = window.innerWidth;
@@ -28,15 +43,15 @@ function generateNoise() {
     const data = imageData.data;
     
     horizontalWaveOffset += 2;
+    updateTrail();
     
-    // Prima genera il rumore base in un buffer
+    // Buffer rumore
     const noiseBuffer = new Float32Array(width * height);
     for (let i = 0; i < noiseBuffer.length; i++) {
         noiseBuffer[i] = Math.random() * 160 + 50;
     }
     
     for (let y = 0; y < height; y++) {
-        // Onde di base
         const waveDistortion = Math.sin((y + horizontalWaveOffset) * 0.05) * 0.3;
         const bandY = (horizontalWaveOffset * 0.5) % height;
         const distToBand = Math.abs(y - bandY);
@@ -45,67 +60,74 @@ function generateNoise() {
         for (let x = 0; x < width; x++) {
             const i = (y * width + x) * 4;
             
-            // Distanza dal mouse
-            const dx = x - mouseX;
-            const dy = y - mouseY;
-            const dist = Math.sqrt(dx * dx + dy * dy);
+            // Calcola effetto combinato di tutti i punti della scia
+            let totalBend = 0;
+            let totalPull = 0;
+            let totalChromaR = 0;
+            let totalChromaB = 0;
+            let totalFlicker = 0;
+            let maxIntensity = 0;
             
-            // Coordinate sorgente (dove prendere il pixel)
-            let srcX = x;
-            let srcY = y;
-            let rOffset = 0;
-            let bOffset = 0;
-            
-            if (dist < magnetRadius) {
-                const intensity = 1 - (dist / magnetRadius);
-                const curve = intensity * intensity;
+            for (let t = 0; t < trailLength; t++) {
+                const tx = trail[t].x;
+                const ty = trail[t].y;
+                if (tx < -500) continue;
                 
-                // Distorsione delle righe - si piegano verso il magnete
-                // Le righe sopra si piegano verso il basso, quelle sotto verso l'alto
-                const bendStrength = curve * 60;
-                const horizontalPull = curve * 40 * Math.sign(dx);
+                const dx = x - tx;
+                const dy = y - ty;
+                const dist = Math.sqrt(dx * dx + dy * dy);
                 
-                // Curva parabolica della distorsione (come una lente)
-                srcY = y + bendStrength * (dy / magnetRadius);
-                srcX = x + horizontalPull;
+                // Raggio decresce lungo la scia
+                const trailFade = 1 - (t / trailLength);
+                const radius = magnetRadius * trailFade;
                 
-                // Aberrazione cromatica: R e B si separano orizzontalmente
-                const chromaStrength = curve * 15;
-                rOffset = -chromaStrength;
-                bOffset = chromaStrength;
-                
-                // Compressione/espansione locale delle righe
-                const squeeze = 1 + curve * 0.5 * Math.sin(dy * 0.1);
-                srcY = mouseY + (srcY - mouseY) * squeeze;
+                if (dist < radius && radius > 0) {
+                    const intensity = (1 - dist / radius) * trailFade;
+                    const curve = intensity * intensity;
+                    
+                    if (intensity > maxIntensity) maxIntensity = intensity;
+                    
+                    // Distorsione intensa
+                    totalBend += curve * 120 * (dy / radius);
+                    totalPull += curve * 80 * Math.sign(dx);
+                    
+                    // Aberrazione cromatica forte
+                    totalChromaR += -curve * 25;
+                    totalChromaB += curve * 25;
+                    
+                    // Flicker
+                    totalFlicker += curve * 60;
+                }
             }
             
-            // Clamp alle coordinate valide
+            // Coordinate sorgente distorte
+            let srcX = x + totalPull;
+            let srcY = y + totalBend;
+            
             srcX = Math.max(0, Math.min(width - 1, Math.floor(srcX)));
             srcY = Math.max(0, Math.min(height - 1, Math.floor(srcY)));
             
-            // Prendi valore dal buffer distorto
+            // Prendi valori
             let gray = noiseBuffer[srcY * width + srcX];
             gray *= (0.85 + waveDistortion * 0.15);
             gray += bandEffect * 60;
             
-            // Valori RGB con aberrazione cromatica
-            const srcXr = Math.max(0, Math.min(width - 1, Math.floor(srcX + rOffset)));
-            const srcXb = Math.max(0, Math.min(width - 1, Math.floor(srcX + bOffset)));
+            // RGB con aberrazione
+            const srcXr = Math.max(0, Math.min(width - 1, Math.floor(srcX + totalChromaR)));
+            const srcXb = Math.max(0, Math.min(width - 1, Math.floor(srcX + totalChromaB)));
             
             let r = noiseBuffer[srcY * width + srcXr];
             let g = gray;
             let b = noiseBuffer[srcY * width + srcXb];
             
-            // Applica onde
             r *= (0.85 + waveDistortion * 0.15);
             b *= (0.85 + waveDistortion * 0.15);
             r += bandEffect * 60;
             b += bandEffect * 60;
             
-            // Nella zona magnetica aggiungi instabilità
-            if (dist < magnetRadius) {
-                const flickerIntensity = (1 - dist / magnetRadius) * 40;
-                const flicker = (Math.random() - 0.5) * flickerIntensity;
+            // Flicker nella zona distorta
+            if (totalFlicker > 0) {
+                const flicker = (Math.random() - 0.5) * totalFlicker;
                 r += flicker;
                 g += flicker * 0.7;
                 b += flicker;
