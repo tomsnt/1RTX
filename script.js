@@ -263,7 +263,7 @@ if (logoImg) {
     }
 }
 
-// Funzione di warp fluido
+// Funzione di warp fluido con scanlines
 function drawWarpedLogo() {
     if (!logoLoaded || !logoImg) return;
     
@@ -278,94 +278,61 @@ function drawWarpedLogo() {
     
     const dist = Math.sqrt(relMouseX * relMouseX + relMouseY * relMouseY);
     const maxDist = 400;
-    const intensity = Math.max(0, 1 - dist / maxDist);
     
     logoCtx.clearRect(0, 0, logoCanvas.width, logoCanvas.height);
-    
-    // Griglia mesh per la distorsione
-    const gridSize = 12; // Numero di divisioni
-    const cellWidth = logoWidth / gridSize;
-    const cellHeight = logoHeight / gridSize;
     
     const startX = canvasCenterX - logoWidth / 2;
     const startY = canvasCenterY - logoHeight / 2;
     
-    // Per ogni cella della griglia
-    for (let gy = 0; gy < gridSize; gy++) {
-        for (let gx = 0; gx < gridSize; gx++) {
-            // Posizione originale della cella
-            const srcX = (gx / gridSize) * logoWidth;
-            const srcY = (gy / gridSize) * logoHeight;
-            
-            // Calcola la distorsione per ogni angolo della cella
-            const corners = [];
-            for (let cy = 0; cy <= 1; cy++) {
-                for (let cx = 0; cx <= 1; cx++) {
-                    const origX = startX + (gx + cx) * cellWidth;
-                    const origY = startY + (gy + cy) * cellHeight;
-                    
-                    // Distanza dal punto al mouse
-                    const dx = relMouseX - (origX - canvasCenterX);
-                    const dy = relMouseY - (origY - canvasCenterY);
-                    const pointDist = Math.sqrt(dx * dx + dy * dy);
-                    
-                    // Forza di attrazione - più forte quando vicino
-                    const pullRadius = 250;
-                    const pull = Math.max(0, 1 - pointDist / pullRadius);
-                    const pullStrength = pull * pull * pull; // Curva cubica per effetto più fluido
-                    
-                    // Sposta il punto verso il mouse
-                    const warpX = origX + dx * pullStrength * 0.4;
-                    const warpY = origY + dy * pullStrength * 0.4;
-                    
-                    corners.push({ x: warpX, y: warpY });
-                }
-            }
-            
-            // Disegna la cella distorta usando drawImage con clipping
-            // corners: [topLeft, topRight, bottomLeft, bottomRight]
-            
-            // Usa una trasformazione affine approssimata
-            const topLeft = corners[0];
-            const topRight = corners[1];
-            const bottomLeft = corners[2];
-            const bottomRight = corners[3];
-            
-            // Centro della cella distorta
-            const centerX = (topLeft.x + topRight.x + bottomLeft.x + bottomRight.x) / 4;
-            const centerY = (topLeft.y + topRight.y + bottomLeft.y + bottomRight.y) / 4;
-            
-            // Calcola scala e rotazione approssimate
-            const scaleX = Math.sqrt(
-                Math.pow(topRight.x - topLeft.x, 2) + 
-                Math.pow(topRight.y - topLeft.y, 2)
-            ) / cellWidth;
-            
-            const scaleY = Math.sqrt(
-                Math.pow(bottomLeft.x - topLeft.x, 2) + 
-                Math.pow(bottomLeft.y - topLeft.y, 2)
-            ) / cellHeight;
-            
-            const angle = Math.atan2(topRight.y - topLeft.y, topRight.x - topLeft.x);
-            
-            logoCtx.save();
-            logoCtx.translate(centerX, centerY);
-            logoCtx.rotate(angle);
-            logoCtx.scale(scaleX, scaleY);
-            
-            // Disegna la porzione corrispondente dell'immagine
-            logoCtx.drawImage(
-                logoImg,
-                srcX, srcY, cellWidth + 1, cellHeight + 1,  // Source
-                -cellWidth / 2, -cellHeight / 2, cellWidth + 1, cellHeight + 1  // Destination
-            );
-            
-            logoCtx.restore();
-        }
+    // Disegna il logo riga per riga con offset fluido
+    const numLines = logoHeight;
+    
+    for (let line = 0; line < numLines; line++) {
+        // Posizione Y della linea nel canvas
+        const destY = startY + line;
+        
+        // Centro Y della linea relativo al centro
+        const lineRelY = destY - canvasCenterY;
+        
+        // Calcola la distanza di questo punto dal mouse
+        const lineMouseDist = Math.sqrt(relMouseX * relMouseX + (relMouseY - lineRelY) * (relMouseY - lineRelY));
+        
+        // Forza di attrazione basata sulla distanza
+        const pullRadius = 300;
+        const pull = Math.max(0, 1 - lineMouseDist / pullRadius);
+        const pullStrength = pull * pull * pull; // Curva cubica
+        
+        // Offset orizzontale - la linea viene tirata verso il mouse
+        const offsetX = relMouseX * pullStrength * 0.5;
+        
+        // Stretch orizzontale - le linee si espandono/comprimono
+        const stretchFactor = 1 + pullStrength * 0.3 * Math.sign(relMouseX - 0);
+        
+        // Offset verticale per effetto liquido
+        const offsetY = (relMouseY - lineRelY) * pullStrength * 0.2;
+        
+        // Calcola posizione sorgente (con un leggero shift per effetto liquido)
+        const srcY = line - offsetY;
+        
+        // Salta se fuori range
+        if (srcY < 0 || srcY >= logoHeight - 1) continue;
+        
+        // Calcola la larghezza stretched
+        const stretchedWidth = logoWidth * stretchFactor;
+        const stretchedStartX = startX + offsetX + (logoWidth - stretchedWidth) / 2;
+        
+        // Disegna la singola riga
+        logoCtx.drawImage(
+            logoImg,
+            0, srcY, logoWidth, 1,  // Source: una riga
+            stretchedStartX, destY + offsetY, stretchedWidth, 1.5  // Dest: riga stretched e spostata
+        );
     }
     
     // Effetto flicker leggero
-    logoCtx.globalAlpha = 0.85 + Math.random() * 0.1;
+    if (Math.random() > 0.95) {
+        logoCtx.globalAlpha = 0.7 + Math.random() * 0.3;
+    }
 }
 
 // Animazione del logo warpato
