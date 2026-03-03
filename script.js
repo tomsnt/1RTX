@@ -63,10 +63,8 @@ function generateNoise() {
             // Calcola effetto combinato di tutti i punti della scia
             let totalBend = 0;
             let totalPull = 0;
-            let totalChromaR = 0;
-            let totalChromaB = 0;
+            let totalChroma = 0;
             let totalFlicker = 0;
-            let maxIntensity = 0;
             
             for (let t = 0; t < trailLength; t++) {
                 const tx = trail[t].x;
@@ -85,18 +83,15 @@ function generateNoise() {
                     const intensity = (1 - dist / radius) * trailFade;
                     const curve = intensity * intensity;
                     
-                    if (intensity > maxIntensity) maxIntensity = intensity;
+                    // Distorsione MOLTO intensa
+                    totalBend += curve * 200 * (dy / radius);
+                    totalPull += curve * 150 * Math.sign(dx);
                     
-                    // Distorsione intensa
-                    totalBend += curve * 120 * (dy / radius);
-                    totalPull += curve * 80 * Math.sign(dx);
-                    
-                    // Aberrazione cromatica forte
-                    totalChromaR += -curve * 25;
-                    totalChromaB += curve * 25;
+                    // Aberrazione cromatica (separazione RGB)
+                    totalChroma += curve * 50;
                     
                     // Flicker
-                    totalFlicker += curve * 60;
+                    totalFlicker += curve * 80;
                 }
             }
             
@@ -112,24 +107,27 @@ function generateNoise() {
             gray *= (0.85 + waveDistortion * 0.15);
             gray += bandEffect * 60;
             
-            // RGB con aberrazione
-            const srcXr = Math.max(0, Math.min(width - 1, Math.floor(srcX + totalChromaR)));
-            const srcXb = Math.max(0, Math.min(width - 1, Math.floor(srcX + totalChromaB)));
+            // RGB con aberrazione cromatica naturale (solo separazione, no tinte)
+            const srcXr = Math.max(0, Math.min(width - 1, Math.floor(srcX - totalChroma)));
+            const srcXg = Math.max(0, Math.min(width - 1, Math.floor(srcX)));
+            const srcXb = Math.max(0, Math.min(width - 1, Math.floor(srcX + totalChroma)));
             
             let r = noiseBuffer[srcY * width + srcXr];
-            let g = gray;
+            let g = noiseBuffer[srcY * width + srcXg];
             let b = noiseBuffer[srcY * width + srcXb];
             
             r *= (0.85 + waveDistortion * 0.15);
+            g *= (0.85 + waveDistortion * 0.15);
             b *= (0.85 + waveDistortion * 0.15);
             r += bandEffect * 60;
+            g += bandEffect * 60;
             b += bandEffect * 60;
             
             // Flicker nella zona distorta
             if (totalFlicker > 0) {
                 const flicker = (Math.random() - 0.5) * totalFlicker;
                 r += flicker;
-                g += flicker * 0.7;
+                g += flicker;
                 b += flicker;
             }
             
