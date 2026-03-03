@@ -234,7 +234,7 @@ let logoHeight = 300;
 // Configura il canvas del logo
 function setupLogoCanvas() {
     logoCanvas.style.position = 'fixed';
-    logoCanvas.style.top = '50%';
+    logoCanvas.style.top = '35%';
     logoCanvas.style.left = '50%';
     logoCanvas.style.transform = 'translate(-50%, -50%)';
     logoCanvas.style.zIndex = '200';
@@ -270,9 +270,9 @@ function drawWarpedLogo() {
     const canvasCenterX = logoCanvas.width / 2;
     const canvasCenterY = logoCanvas.height / 2;
     
-    // Posizione del mouse relativa al centro del canvas (che è al centro dello schermo)
+    // Posizione del mouse relativa al centro del canvas (che è al 35% dello schermo)
     const screenCenterX = window.innerWidth / 2;
-    const screenCenterY = window.innerHeight / 2;
+    const screenCenterY = window.innerHeight * 0.35;
     const relMouseX = mouseX - screenCenterX;
     const relMouseY = mouseY - screenCenterY;
     
