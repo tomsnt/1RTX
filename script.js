@@ -356,6 +356,7 @@ function animateLogo() {
 animateLogo();
 
 let mobileNearText = false; // Traccia se su mobile siamo vicini alla scritta
+let desktopNearText = false; // Traccia se su desktop siamo vicini alla scritta
 
 function distortElements() {
     // Testo glitch
@@ -387,8 +388,8 @@ function distortElements() {
                     mobileNearText = true;
                     startDecoding();
                 }
-            } else {
-                // Desktop: effetto wobble normale
+            } else if (glitchDisplay) {
+                // Desktop: effetto wobble + decodifica
                 const intensity = (1 - dist / 150);
                 const curve = intensity * intensity;
                 const time = Date.now() * 0.01;
@@ -397,6 +398,12 @@ function distortElements() {
                 const translateX = Math.sin(time * 2) * curve * 20;
                 
                 glitchCodeEl.style.transform = `translateX(-50%) skewX(${skewX}deg) translateX(${translateX}px)`;
+                
+                // Avvia decodifica anche su desktop quando vicino
+                if (!desktopNearText) {
+                    desktopNearText = true;
+                    startDecoding();
+                }
             }
         } else {
             // Lontano dalla scritta
@@ -409,6 +416,12 @@ function distortElements() {
                 // Reset decodifica se era attiva
                 if (mobileNearText) {
                     mobileNearText = false;
+                    resetDecoding();
+                }
+            } else if (glitchDisplay) {
+                // Desktop: reset decodifica
+                if (desktopNearText) {
+                    desktopNearText = false;
                     resetDecoding();
                 }
             }
