@@ -237,11 +237,18 @@ function setupLogoCanvas() {
     
     logoCanvas.width = 500;
     logoCanvas.height = 500;
+    
+    // TEST: mettiamo a 70vh per vedere se cambia
+    const desiredCenterVh = isMobile ? 25 : 70;
+    const topPx = (window.innerHeight * desiredCenterVh / 100) - 250;
+    
+    console.log('setupLogoCanvas called, topPx:', topPx);
+    
     logoCanvas.style.cssText = `
         position: fixed !important;
         left: 50% !important;
-        top: ${isMobile ? '20vh' : '15vh'} !important;
-        transform: translate(-50%, -50%) !important;
+        top: ${topPx}px !important;
+        transform: translateX(-50%) !important;
         z-index: 200 !important;
         pointer-events: none !important;
         mix-blend-mode: lighten !important;
@@ -617,13 +624,13 @@ function triggerHeavyGlitch() {
     const nextGlitch = Math.random() * 5000 + 3000;
     
     setTimeout(function() {
-        if (centerLogo) {
+        if (centerLogoDiv) {
             // Attiva glitch pesante
-            centerLogo.classList.add('heavy-glitch');
+            centerLogoDiv.classList.add('heavy-glitch');
             
             // Rimuovi dopo l'animazione
             setTimeout(function() {
-                centerLogo.classList.remove('heavy-glitch');
+                centerLogoDiv.classList.remove('heavy-glitch');
             }, 150);
         }
         
