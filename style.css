@@ -22,15 +22,7 @@ body {
     display: none;
 }
 
-#logo-canvas {
-    position: fixed;
-    top: 15vh !important;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 200;
-    pointer-events: none;
-    mix-blend-mode: lighten;
-}
+/* #logo-canvas gestito da JS */
 
 #center-logo img {
     max-width: 300px;
@@ -162,10 +154,7 @@ body {
         transform: translate(-50%, 0);
     }
     
-    #logo-canvas {
-        top: 20vh !important;
-        transform: translate(-50%, 0) !important;
-    }
+    /* #logo-canvas gestito da JS */
     
     #glitch-code {
         top: auto;
