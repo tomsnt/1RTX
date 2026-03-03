@@ -13,7 +13,18 @@ body {
 /* Immagine centrata */
 #center-logo {
     position: fixed;
-    top: 50%;
+    top: 35%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 200;
+    pointer-events: none;
+    mix-blend-mode: lighten;
+    display: none;
+}
+
+#logo-canvas {
+    position: fixed;
+    top: 35%;
     left: 50%;
     transform: translate(-50%, -50%);
     z-index: 200;
