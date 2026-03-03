@@ -7,10 +7,10 @@ const noiseCtx = noiseCanvas.getContext('2d');
 const psychedelicCanvas = document.getElementById('psychedelic');
 const psychedelicCtx = psychedelicCanvas.getContext('2d');
 
-// Posizione mouse diretta (no delay)
+// Mouse
 let mouseX = -1000;
 let mouseY = -1000;
-const magnetRadius = 180;
+const magnetRadius = 250;
 
 function resizeCanvases() {
     noiseCanvas.width = window.innerWidth;
@@ -20,7 +20,6 @@ function resizeCanvases() {
 }
 
 let horizontalWaveOffset = 0;
-let colorTime = 0;
 
 function generateNoise() {
     const width = noiseCanvas.width;
@@ -29,9 +28,15 @@ function generateNoise() {
     const data = imageData.data;
     
     horizontalWaveOffset += 2;
-    colorTime += 0.05;
+    
+    // Prima genera il rumore base in un buffer
+    const noiseBuffer = new Float32Array(width * height);
+    for (let i = 0; i < noiseBuffer.length; i++) {
+        noiseBuffer[i] = Math.random() * 160 + 50;
+    }
     
     for (let y = 0; y < height; y++) {
+        // Onde di base
         const waveDistortion = Math.sin((y + horizontalWaveOffset) * 0.05) * 0.3;
         const bandY = (horizontalWaveOffset * 0.5) % height;
         const distToBand = Math.abs(y - bandY);
@@ -45,38 +50,65 @@ function generateNoise() {
             const dy = y - mouseY;
             const dist = Math.sqrt(dx * dx + dy * dy);
             
-            // Rumore base grigio
-            let gray = Math.random() * 160 + 50;
+            // Coordinate sorgente (dove prendere il pixel)
+            let srcX = x;
+            let srcY = y;
+            let rOffset = 0;
+            let bOffset = 0;
+            
+            if (dist < magnetRadius) {
+                const intensity = 1 - (dist / magnetRadius);
+                const curve = intensity * intensity;
+                
+                // Distorsione delle righe - si piegano verso il magnete
+                // Le righe sopra si piegano verso il basso, quelle sotto verso l'alto
+                const bendStrength = curve * 60;
+                const horizontalPull = curve * 40 * Math.sign(dx);
+                
+                // Curva parabolica della distorsione (come una lente)
+                srcY = y + bendStrength * (dy / magnetRadius);
+                srcX = x + horizontalPull;
+                
+                // Aberrazione cromatica: R e B si separano orizzontalmente
+                const chromaStrength = curve * 15;
+                rOffset = -chromaStrength;
+                bOffset = chromaStrength;
+                
+                // Compressione/espansione locale delle righe
+                const squeeze = 1 + curve * 0.5 * Math.sin(dy * 0.1);
+                srcY = mouseY + (srcY - mouseY) * squeeze;
+            }
+            
+            // Clamp alle coordinate valide
+            srcX = Math.max(0, Math.min(width - 1, Math.floor(srcX)));
+            srcY = Math.max(0, Math.min(height - 1, Math.floor(srcY)));
+            
+            // Prendi valore dal buffer distorto
+            let gray = noiseBuffer[srcY * width + srcX];
             gray *= (0.85 + waveDistortion * 0.15);
             gray += bandEffect * 60;
             
-            let r = gray, g = gray, b = gray;
+            // Valori RGB con aberrazione cromatica
+            const srcXr = Math.max(0, Math.min(width - 1, Math.floor(srcX + rOffset)));
+            const srcXb = Math.max(0, Math.min(width - 1, Math.floor(srcX + bOffset)));
             
-            // Effetto magnetico fluido
+            let r = noiseBuffer[srcY * width + srcXr];
+            let g = gray;
+            let b = noiseBuffer[srcY * width + srcXb];
+            
+            // Applica onde
+            r *= (0.85 + waveDistortion * 0.15);
+            b *= (0.85 + waveDistortion * 0.15);
+            r += bandEffect * 60;
+            b += bandEffect * 60;
+            
+            // Nella zona magnetica aggiungi instabilità
             if (dist < magnetRadius) {
-                const intensity = 1 - (dist / magnetRadius);
-                const smooth = intensity * intensity * intensity; // Curva cubica più morbida
-                
-                // Angolo per variazione colore
-                const angle = Math.atan2(dy, dx);
-                
-                // Colori che ruotano in base ad angolo e tempo
-                const hue = (angle + colorTime) * 2;
-                
-                // Conversione HSL semplificata
-                const chromaR = Math.sin(hue) * 80 * smooth;
-                const chromaG = Math.sin(hue + 2.1) * 80 * smooth;
-                const chromaB = Math.sin(hue + 4.2) * 80 * smooth;
-                
-                r = gray + chromaR + smooth * 40;
-                g = gray + chromaG + smooth * 20;
-                b = gray + chromaB + smooth * 60;
-                
-                // Distorsione onde locali
-                const warp = Math.sin(dist * 0.1 - colorTime * 3) * 30 * smooth;
-                r += warp;
-                g += warp * 0.7;
-                b -= warp * 0.5;
+                const flickerIntensity = (1 - dist / magnetRadius) * 40;
+                const flicker = (Math.random() - 0.5) * flickerIntensity;
+                r += flicker;
+                g += flicker * 0.7;
+                b += flicker;
             }
             
             data[i] = Math.min(255, Math.max(0, r));
