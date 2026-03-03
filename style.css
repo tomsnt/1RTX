@@ -122,6 +122,8 @@ body {
     text-align: center;
     text-decoration: none;
     cursor: pointer;
+    min-width: 200px;
+    min-height: 30px;
 }
 
 #glitch-display {
@@ -139,7 +141,7 @@ body {
     animation: glitchFlicker 0.08s infinite;
     opacity: 0.95;
     display: inline-block;
-    transition: opacity 0.2s ease;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
 }
 
 #reveal-text {
@@ -157,16 +159,19 @@ body {
     top: 50%;
     transform: translate(-50%, -50%);
     opacity: 0;
-    transition: opacity 0.3s ease;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
     white-space: nowrap;
 }
 
 #glitch-code:hover #glitch-display {
     opacity: 0;
+    visibility: hidden;
 }
 
 #glitch-code:hover #reveal-text {
     opacity: 1;
+    visibility: visible;
 }
 
 /* Mobile */

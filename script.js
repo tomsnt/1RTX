@@ -246,8 +246,12 @@ document.addEventListener('mousemove', function(e) {
     const velocityY = e.clientY - lastMouseY;
     const speed = Math.sqrt(velocityX * velocityX + velocityY * velocityY);
     
+    // Non generare effetti se il mouse è sopra il glitch-code
+    const glitchCodeElement = document.getElementById('glitch-code');
+    const isOverGlitch = glitchCodeElement && glitchCodeElement.matches(':hover');
+    
     // Reattivo ma senza cambiare intensità rumore
-    if (speed > 5 && currentTime - lastTrailTime > 40) {
+    if (speed > 5 && currentTime - lastTrailTime > 40 && !isOverGlitch) {
         createMultipleTrails(e.clientX, e.clientY, velocityX, velocityY);
         lastTrailTime = currentTime;
         // Niente modifica al rumore - rimane costante
