@@ -355,7 +355,7 @@ function createRollingBar() {
 // Le onde di distorsione orizzontali sono integrate nel rumore
 
 // ============================================
-// EFFETTO GLITCH - Caratteri che sfarfallano
+// EFFETTO GLITCH - Decodifica progressiva
 // ============================================
 
 // Caratteri per l'effetto glitch (stile Minecraft enchantment table)
@@ -374,49 +374,105 @@ const glitchChars = [
 ];
 
 const glitchDisplay = document.getElementById('glitch-display');
-const codeLength = 16; // Lunghezza fissa del codice
+const targetText = "2026 ANNIVERSARY DJ SET";
 let isHovering = false;
+let lockedChars = []; // Array di booleani per caratteri "decodificati"
+let decodeTimeouts = [];
+
+// Inizializza array di lock
+for (let i = 0; i < targetText.length; i++) {
+    lockedChars[i] = false;
+}
 
 // Genera un carattere glitch casuale
 function getRandomGlitchChar() {
     return glitchChars[Math.floor(Math.random() * glitchChars.length)];
 }
 
-// Genera una stringa glitch con separatori
-function generateGlitchString() {
+// Genera stringa con mix di glitch e caratteri decodificati
+function generateMixedString() {
     let result = '';
-    for (let i = 0; i < codeLength; i++) {
-        // Aggiungi separatori ogni 4 caratteri
-        if (i > 0 && i % 4 === 0) {
-            result += Math.random() > 0.5 ? ':' : '-';
+    for (let i = 0; i < targetText.length; i++) {
+        if (lockedChars[i]) {
+            // Carattere già decodificato - mostra quello vero
+            result += targetText[i];
+        } else {
+            // Carattere ancora in glitch
+            if (targetText[i] === ' ') {
+                result += ' ';
+            } else {
+                result += getRandomGlitchChar();
+            }
         }
-        result += getRandomGlitchChar();
     }
     return result;
 }
 
 // Aggiorna il display con effetto glitch
 function updateGlitchDisplay() {
-    if (!isHovering && glitchDisplay) {
-        // Crea effetto di cambio graduale
-        const newText = generateGlitchString();
-        glitchDisplay.textContent = newText;
-        
-        // Aggiungi occasionalmente uno "scatto" extra
-        if (Math.random() > 0.9) {
-            setTimeout(function() {
-                if (!isHovering && glitchDisplay) {
-                    glitchDisplay.textContent = generateGlitchString();
-                }
-            }, 30);
+    if (glitchDisplay) {
+        glitchDisplay.textContent = generateMixedString();
+    }
+}
+
+// Decodifica progressiva quando in hover
+function startDecoding() {
+    // Cancella eventuali timeout precedenti
+    decodeTimeouts.forEach(t => clearTimeout(t));
+    decodeTimeouts = [];
+    
+    // Ordine casuale per decodifica
+    let indices = [];
+    for (let i = 0; i < targetText.length; i++) {
+        if (targetText[i] !== ' ') {
+            indices.push(i);
         }
     }
+    // Mescola gli indici
+    for (let i = indices.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [indices[i], indices[j]] = [indices[j], indices[i]];
+    }
+    
+    // Decodifica ogni carattere con delay progressivo
+    indices.forEach((charIndex, orderIndex) => {
+        const timeout = setTimeout(() => {
+            lockedChars[charIndex] = true;
+            updateGlitchDisplay();
+        }, 30 + orderIndex * 40); // 40ms tra ogni carattere
+        decodeTimeouts.push(timeout);
+    });
+}
+
+// Reset quando esce dall'hover
+function resetDecoding() {
+    // Cancella timeout pendenti
+    decodeTimeouts.forEach(t => clearTimeout(t));
+    decodeTimeouts = [];
+    
+    // Reset graduale dei caratteri (effetto inverso)
+    let indices = [];
+    for (let i = 0; i < targetText.length; i++) {
+        if (lockedChars[i]) {
+            indices.push(i);
+        }
+    }
+    // Mescola per reset casuale
+    for (let i = indices.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [indices[i], indices[j]] = [indices[j], indices[i]];
+    }
+    
+    indices.forEach((charIndex, orderIndex) => {
+        setTimeout(() => {
+            lockedChars[charIndex] = false;
+        }, orderIndex * 25);
+    });
 }
 
 // Velocità variabile per effetto più organico
 function scheduleNextUpdate() {
-    // Intervallo casuale tra 40ms e 120ms
-    const interval = Math.random() * 80 + 40;
+    const interval = Math.random() * 60 + 30;
     setTimeout(function() {
         updateGlitchDisplay();
         scheduleNextUpdate();
@@ -428,21 +484,25 @@ const glitchCode = document.getElementById('glitch-code');
 if (glitchCode) {
     glitchCode.addEventListener('mouseenter', function() {
         isHovering = true;
+        startDecoding();
     });
     
     glitchCode.addEventListener('mouseleave', function() {
         isHovering = false;
+        resetDecoding();
     });
     
     // Touch support
     glitchCode.addEventListener('touchstart', function() {
         isHovering = true;
+        startDecoding();
     }, { passive: true });
     
     glitchCode.addEventListener('touchend', function() {
         setTimeout(function() {
             isHovering = false;
-        }, 1500); // Mantieni visibile per 1.5s dopo il touch
+            resetDecoding();
+        }, 2000); // Mantieni visibile per 2s dopo il touch
     }, { passive: true });
 }
 
