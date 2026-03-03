@@ -238,8 +238,8 @@ function setupLogoCanvas() {
     logoCanvas.width = 500;
     logoCanvas.height = 500;
     
-    // Desktop: 30vh, Mobile: 25vh
-    const desiredCenterVh = isMobile ? 25 : 30;
+    // 40vh sia desktop che mobile
+    const desiredCenterVh = 40;
     const topPx = (window.innerHeight * desiredCenterVh / 100) - 250;
     
     logoCanvas.style.cssText = `
