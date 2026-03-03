@@ -305,8 +305,10 @@ function drawWarpedLogo() {
         // Offset orizzontale - la linea viene tirata verso il mouse
         const offsetX = relMouseX * pullStrength * 0.5;
         
-        // Stretch orizzontale - le linee si espandono/comprimono
-        const stretchFactor = 1 + pullStrength * 0.3 * Math.sign(relMouseX - 0);
+        // Stretch orizzontale fluido - nessun salto brusco
+        // Lo stretch dipende dalla distanza normalizzata, non dal segno
+        const normalizedX = relMouseX / (Math.abs(relMouseX) + 100); // Transizione morbida attraverso lo zero
+        const stretchFactor = 1 + pullStrength * 0.25;
         
         // Offset verticale per effetto liquido
         const offsetY = (relMouseY - lineRelY) * pullStrength * 0.2;
