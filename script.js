@@ -267,7 +267,7 @@ function drawWarpedLogo() {
     // Su mobile (<=768px) il logo è a 20vh, su desktop a 35%
     const isMobile = window.innerWidth <= 768;
     const screenCenterX = window.innerWidth / 2;
-    const screenCenterY = isMobile ? window.innerHeight * 0.20 : window.innerHeight * 0.35;
+    const screenCenterY = isMobile ? window.innerHeight * 0.20 : window.innerHeight * 0.25;
     const relMouseX = mouseX - screenCenterX;
     const relMouseY = mouseY - screenCenterY;
     
