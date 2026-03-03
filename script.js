@@ -264,6 +264,8 @@ document.addEventListener('mousemove', function(e) {
 let lastTouchX = 0;
 let lastTouchY = 0;
 let lastTouchTime = 0;
+let activeTrails = 0;
+const MAX_ACTIVE_TRAILS = 25; // Limita elementi DOM attivi
 
 document.addEventListener('touchstart', function(e) {
     if (e.touches.length > 0) {
@@ -281,9 +283,9 @@ document.addEventListener('touchmove', function(e) {
         const velocityY = touch.clientY - lastTouchY;
         const speed = Math.sqrt(velocityX * velocityX + velocityY * velocityY);
         
-        // Stesso comportamento del mouse
-        if (speed > 5 && currentTime - lastTouchTime > 40) {
-            createMultipleTrails(touch.clientX, touch.clientY, velocityX, velocityY);
+        // Throttle bilanciato (60ms) con limite elementi
+        if (speed > 5 && currentTime - lastTouchTime > 60 && activeTrails < MAX_ACTIVE_TRAILS) {
+            createMobileTrail(touch.clientX, touch.clientY, velocityX, velocityY);
             lastTouchTime = currentTime;
         }
         
@@ -291,6 +293,35 @@ document.addEventListener('touchmove', function(e) {
         lastTouchY = touch.clientY;
     }
 }, { passive: true });
+
+// Versione ottimizzata per mobile
+function createMobileTrail(x, y, velocityX, velocityY) {
+    activeTrails++;
+    
+    const trail = document.createElement('div');
+    trail.className = 'distortion-trail';
+    
+    const speed = Math.sqrt(velocityX * velocityX + velocityY * velocityY);
+    const width = Math.min(600, Math.max(150, speed * 6));
+    const height = Math.random() * 25 + 12;
+    
+    const offsetY = (Math.random() - 0.5) * 50;
+    
+    trail.style.left = x + 'px';
+    trail.style.top = (y + offsetY) + 'px';
+    trail.style.width = width + 'px';
+    trail.style.height = height + 'px';
+    
+    const brightness = Math.random() * 40 + 60;
+    trail.style.background = 'linear-gradient(90deg, transparent, rgba(' + brightness + ',' + brightness + ',' + brightness + ', 0.5), rgba(255, 255, 255, 0.4), transparent)';
+    
+    trailsContainer.appendChild(trail);
+    
+    setTimeout(function() {
+        trail.remove();
+        activeTrails--;
+    }, 800);
+}
 
 // ============================================
 // EFFETTI CASUALI AUTOMATICI
@@ -318,6 +349,73 @@ function createRollingBar() {
 
 // Effetti automatici disabilitati per statica costante
 // Le onde di distorsione orizzontali sono integrate nel rumore
+
+// ============================================
+// TIMER CIFRATO - Countdown con simboli
+// ============================================
+
+// Mappa cifratura COMPLESSA:
+// Decine: Δ=0 Ω=1 Π=2 Ж=3 Ҫ=4 Ɣ=5 ҂=6 ₪=7 Ƨ=8 ᛉ=9
+// Unità:  Ø=0 I=1 Z=2 Ξ=3 Ψ=4 Σ=5 G=6 Λ=7 ∞=8 Φ=9
+const cipherTens = {
+    '0': 'Δ',
+    '1': 'Ω',
+    '2': 'Π',
+    '3': 'Ж',
+    '4': 'Ҫ',
+    '5': 'Ɣ',
+    '6': '҂',
+    '7': '₪',
+    '8': 'Ƨ',
+    '9': 'ᛉ'
+};
+
+const cipherUnits = {
+    '0': 'Ø',
+    '1': 'I',
+    '2': 'Z',
+    '3': 'Ξ',
+    '4': 'Ψ',
+    '5': 'Σ',
+    '6': 'G',
+    '7': 'Λ',
+    '8': '∞',
+    '9': 'Φ'
+};
+
+// Data target del countdown (27 febbraio 2026 alle 21:00)
+const targetDate = new Date('2026-02-27T21:00:00');
+
+function encryptNumber(num) {
+    const str = String(num).padStart(2, '0');
+    return cipherTens[str[0]] + cipherUnits[str[1]];
+}
+
+function updateEncryptedTimer() {
+    const now = new Date();
+    const diff = targetDate - now;
+    
+    if (diff <= 0) {
+        document.getElementById('timer-display').textContent = 'ØΔ:ØΔ:ØΔ:ØΔ';
+        return;
+    }
+    
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+    
+    const encrypted = encryptNumber(days) + ':' + 
+                      encryptNumber(hours) + ':' + 
+                      encryptNumber(minutes) + ':' + 
+                      encryptNumber(seconds);
+    
+    document.getElementById('timer-display').textContent = encrypted;
+}
+
+// Aggiorna il timer ogni secondo
+setInterval(updateEncryptedTimer, 1000);
+updateEncryptedTimer();
 
 // ============================================
 // GLITCH PESANTE OCCASIONALE SUL LOGO
