@@ -355,6 +355,8 @@ function animateLogo() {
 
 animateLogo();
 
+let mobileNearText = false; // Traccia se su mobile siamo vicini alla scritta
+
 function distortElements() {
     // Testo glitch
     if (glitchCodeEl) {
@@ -366,8 +368,25 @@ function distortElements() {
         const dy = mouseY - textCenterY;
         const dist = Math.sqrt(dx * dx + dy * dy);
         
-        if (dist < 250 && mouseX > 0) {
-            const intensity = (1 - dist / 250);
+        const isMobile = window.innerWidth <= 768;
+        const glitchDisplay = document.getElementById('glitch-display');
+        
+        if (dist < 150 && mouseX > 0) {
+            // Vicino alla scritta
+            if (isMobile && glitchDisplay) {
+                // Rimuovi effetto visivo glitch
+                glitchDisplay.style.animation = 'none';
+                glitchDisplay.style.textShadow = 'none';
+                glitchDisplay.style.opacity = '1';
+                
+                // Avvia decodifica se non già attiva
+                if (!mobileNearText) {
+                    mobileNearText = true;
+                    startDecoding();
+                }
+            }
+            
+            const intensity = (1 - dist / 150);
             const curve = intensity * intensity;
             const time = Date.now() * 0.01;
             
@@ -376,6 +395,20 @@ function distortElements() {
             
             glitchCodeEl.style.transform = `translateX(-50%) skewX(${skewX}deg) translateX(${translateX}px)`;
         } else {
+            // Lontano dalla scritta
+            if (isMobile && glitchDisplay) {
+                // Ripristina effetto glitch
+                glitchDisplay.style.animation = '';
+                glitchDisplay.style.textShadow = '';
+                glitchDisplay.style.opacity = '';
+                
+                // Reset decodifica se era attiva
+                if (mobileNearText) {
+                    mobileNearText = false;
+                    resetDecoding();
+                }
+            }
+            
             glitchCodeEl.style.transform = 'translateX(-50%)';
         }
     }
