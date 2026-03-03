@@ -7,13 +7,10 @@ const noiseCtx = noiseCanvas.getContext('2d');
 const psychedelicCanvas = document.getElementById('psychedelic');
 const psychedelicCtx = psychedelicCanvas.getContext('2d');
 
-// Posizione mouse per effetto magnetico
+// Posizione mouse diretta (no delay)
 let mouseX = -1000;
 let mouseY = -1000;
-let targetMouseX = -1000;
-let targetMouseY = -1000;
-const magnetRadius = 200;
-const magnetStrength = 80;
+const magnetRadius = 180;
 
 function resizeCanvases() {
     noiseCanvas.width = window.innerWidth;
@@ -22,9 +19,8 @@ function resizeCanvases() {
     psychedelicCanvas.height = window.innerHeight;
 }
 
-// Rumore TV statico costante
-let noiseIntensity = 1;
 let horizontalWaveOffset = 0;
+let colorTime = 0;
 
 function generateNoise() {
     const width = noiseCanvas.width;
@@ -32,88 +28,60 @@ function generateNoise() {
     const imageData = noiseCtx.createImageData(width, height);
     const data = imageData.data;
     
-    // Smooth follow del mouse
-    mouseX += (targetMouseX - mouseX) * 0.2;
-    mouseY += (targetMouseY - mouseY) * 0.2;
-    
-    // Aggiorna offset per onde orizzontali
     horizontalWaveOffset += 2;
+    colorTime += 0.05;
     
     for (let y = 0; y < height; y++) {
-        // Distanza verticale dal mouse
-        const dyMouse = y - mouseY;
-        const absYDist = Math.abs(dyMouse);
-        
-        // Calcola spostamento orizzontale magnetico per questa riga
-        let rowShift = 0;
-        let colorSeparation = 0;
-        
-        if (absYDist < magnetRadius) {
-            const falloff = 1 - (absYDist / magnetRadius);
-            const curve = Math.sin(falloff * Math.PI); // Curva a campana
-            
-            // Le righe si spostano lateralmente (effetto magnete CRT)
-            rowShift = curve * magnetStrength * Math.sign(dyMouse);
-            
-            // Separazione colori RGB (aberrazione cromatica)
-            colorSeparation = curve * 8;
-        }
-        
-        // Calcola distorsione orizzontale per questa riga
-        const waveDistortion = Math.sin((y + horizontalWaveOffset) * 0.05) * 0.3 +
-                               Math.sin((y - horizontalWaveOffset * 0.7) * 0.02) * 0.2;
-        
-        // Banda di distorsione che scorre
+        const waveDistortion = Math.sin((y + horizontalWaveOffset) * 0.05) * 0.3;
         const bandY = (horizontalWaveOffset * 0.5) % height;
         const distToBand = Math.abs(y - bandY);
-        const bandEffect = distToBand < 40 ? (1 - distToBand / 40) * 0.4 : 0;
+        const bandEffect = distToBand < 40 ? (1 - distToBand / 40) * 0.3 : 0;
         
         for (let x = 0; x < width; x++) {
             const i = (y * width + x) * 4;
             
-            // Distanza orizzontale dal mouse per intensità locale
-            const dxMouse = x - mouseX;
-            const localDist = Math.sqrt(dxMouse * dxMouse + dyMouse * dyMouse);
-            const localMagnet = localDist < magnetRadius ? (1 - localDist / magnetRadius) : 0;
+            // Distanza dal mouse
+            const dx = x - mouseX;
+            const dy = y - mouseY;
+            const dist = Math.sqrt(dx * dx + dy * dy);
             
-            // Posizione sorgente con shift orizzontale
-            const srcX = x - rowShift * localMagnet;
+            // Rumore base grigio
+            let gray = Math.random() * 160 + 50;
+            gray *= (0.85 + waveDistortion * 0.15);
+            gray += bandEffect * 60;
             
-            // Rumore base
-            let valueR = Math.random() * 180 + 40;
-            let valueG = Math.random() * 180 + 40;
-            let valueB = Math.random() * 180 + 40;
+            let r = gray, g = gray, b = gray;
             
-            // Applica variazione da onda orizzontale
-            const waveMult = 0.85 + waveDistortion * 0.15;
-            valueR *= waveMult;
-            valueG *= waveMult;
-            valueB *= waveMult;
-            
-            // Effetto banda scorrevole
-            const bandAdd = bandEffect * 80;
-            valueR += bandAdd;
-            valueG += bandAdd;
-            valueB += bandAdd;
-            
-            // Aberrazione cromatica magnetica
-            if (colorSeparation > 0 && localMagnet > 0) {
-                const chromaShift = colorSeparation * localMagnet;
-                // R e B separati, G al centro
-                valueR = valueR + chromaShift * 15;
-                valueB = valueB - chromaShift * 15;
+            // Effetto magnetico fluido
+            if (dist < magnetRadius) {
+                const intensity = 1 - (dist / magnetRadius);
+                const smooth = intensity * intensity * intensity; // Curva cubica più morbida
                 
-                // Righe orizzontali distorte nell'area magnetica
-                const lineEffect = Math.sin((y + rowShift * 0.5) * 0.8) * 30 * localMagnet;
-                valueR += lineEffect;
-                valueG += lineEffect * 0.5;
-                valueB -= lineEffect;
+                // Angolo per variazione colore
+                const angle = Math.atan2(dy, dx);
+                
+                // Colori che ruotano in base ad angolo e tempo
+                const hue = (angle + colorTime) * 2;
+                
+                // Conversione HSL semplificata
+                const chromaR = Math.sin(hue) * 80 * smooth;
+                const chromaG = Math.sin(hue + 2.1) * 80 * smooth;
+                const chromaB = Math.sin(hue + 4.2) * 80 * smooth;
+                
+                r = gray + chromaR + smooth * 40;
+                g = gray + chromaG + smooth * 20;
+                b = gray + chromaB + smooth * 60;
+                
+                // Distorsione onde locali
+                const warp = Math.sin(dist * 0.1 - colorTime * 3) * 30 * smooth;
+                r += warp;
+                g += warp * 0.7;
+                b -= warp * 0.5;
             }
             
-            // Clamp
-            data[i] = Math.min(255, Math.max(0, valueR));
-            data[i + 1] = Math.min(255, Math.max(0, valueG));
-            data[i + 2] = Math.min(255, Math.max(0, valueB));
+            data[i] = Math.min(255, Math.max(0, r));
+            data[i + 1] = Math.min(255, Math.max(0, g));
+            data[i + 2] = Math.min(255, Math.max(0, b));
             data[i + 3] = 255;
         }
     }
@@ -198,73 +166,48 @@ animate();
 window.addEventListener('resize', resizeCanvases);
 
 // ============================================
-// EFFETTO DISTORSIONE MAGNETICA
-// (L'effetto è integrato in generateNoise)
+// MOUSE E TOUCH - DIRETTO
 // ============================================
 
-let lastMouseX = 0;
-let lastMouseY = 0;
-
 document.addEventListener('mousemove', function(e) {
-    const currentTime = Date.now();
-    
-    const velocityX = e.clientX - lastMouseX;
-    const velocityY = e.clientY - lastMouseY;
-    const speed = Math.sqrt(velocityX * velocityX + velocityY * velocityY);
-    
-    // Aggiorna posizione mouse per effetto magnetico
     const glitchCodeElement = document.getElementById('glitch-code');
     const isOverGlitch = glitchCodeElement && glitchCodeElement.matches(':hover');
     
     if (!isOverGlitch) {
-        targetMouseX = e.clientX;
-        targetMouseY = e.clientY;
+        mouseX = e.clientX;
+        mouseY = e.clientY;
     } else {
-        // Sposta il magnete fuori dallo schermo quando sopra il testo glitch
-        targetMouseX = -1000;
-        targetMouseY = -1000;
+        mouseX = -1000;
+        mouseY = -1000;
     }
-    
-    lastMouseX = e.clientX;
-    lastMouseY = e.clientY;
 });
 
-// Quando il mouse esce dalla finestra, rimuovi l'effetto magnetico
 document.addEventListener('mouseleave', function() {
-    targetMouseX = -1000;
-    targetMouseY = -1000;
+    mouseX = -1000;
+    mouseY = -1000;
 });
 
 // ============================================
-// SUPPORTO TOUCH PER DISPOSITIVI MOBILI
+// SUPPORTO TOUCH
 // ============================================
-
-let lastTouchX = 0;
-let lastTouchY = 0;
 
 document.addEventListener('touchstart', function(e) {
     if (e.touches.length > 0) {
-        lastTouchX = e.touches[0].clientX;
-        lastTouchY = e.touches[0].clientY;
-        targetMouseX = lastTouchX;
-        targetMouseY = lastTouchY;
+        mouseX = e.touches[0].clientX;
+        mouseY = e.touches[0].clientY;
     }
 }, { passive: true });
 
 document.addEventListener('touchmove', function(e) {
     if (e.touches.length > 0) {
-        const touch = e.touches[0];
-        targetMouseX = touch.clientX;
-        targetMouseY = touch.clientY;
-        lastTouchX = touch.clientX;
-        lastTouchY = touch.clientY;
+        mouseX = e.touches[0].clientX;
+        mouseY = e.touches[0].clientY;
     }
 }, { passive: true });
 
 document.addEventListener('touchend', function() {
-    // Rimuovi effetto magnetico quando il dito si alza
-    targetMouseX = -1000;
-    targetMouseY = -1000;
+    mouseX = -1000;
+    mouseY = -1000;
 }, { passive: true });
 
 // ============================================
