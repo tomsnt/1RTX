@@ -12,8 +12,8 @@ let mouseX = -1000;
 let mouseY = -1000;
 let targetMouseX = -1000;
 let targetMouseY = -1000;
-const magnetRadius = 150; // Raggio dell'effetto magnetico
-const magnetStrength = 25; // Intensità della distorsione
+const magnetRadius = 200;
+const magnetStrength = 80;
 
 function resizeCanvases() {
     noiseCanvas.width = window.innerWidth;
@@ -33,71 +33,87 @@ function generateNoise() {
     const data = imageData.data;
     
     // Smooth follow del mouse
-    mouseX += (targetMouseX - mouseX) * 0.15;
-    mouseY += (targetMouseY - mouseY) * 0.15;
+    mouseX += (targetMouseX - mouseX) * 0.2;
+    mouseY += (targetMouseY - mouseY) * 0.2;
     
     // Aggiorna offset per onde orizzontali
     horizontalWaveOffset += 2;
     
     for (let y = 0; y < height; y++) {
+        // Distanza verticale dal mouse
+        const dyMouse = y - mouseY;
+        const absYDist = Math.abs(dyMouse);
+        
+        // Calcola spostamento orizzontale magnetico per questa riga
+        let rowShift = 0;
+        let colorSeparation = 0;
+        
+        if (absYDist < magnetRadius) {
+            const falloff = 1 - (absYDist / magnetRadius);
+            const curve = Math.sin(falloff * Math.PI); // Curva a campana
+            
+            // Le righe si spostano lateralmente (effetto magnete CRT)
+            rowShift = curve * magnetStrength * Math.sign(dyMouse);
+            
+            // Separazione colori RGB (aberrazione cromatica)
+            colorSeparation = curve * 8;
+        }
+        
         // Calcola distorsione orizzontale per questa riga
         const waveDistortion = Math.sin((y + horizontalWaveOffset) * 0.05) * 0.3 +
                                Math.sin((y - horizontalWaveOffset * 0.7) * 0.02) * 0.2;
         
-        // Banda di distorsione che scorre (effetto TV vintage)
+        // Banda di distorsione che scorre
         const bandY = (horizontalWaveOffset * 0.5) % height;
         const distToBand = Math.abs(y - bandY);
         const bandEffect = distToBand < 40 ? (1 - distToBand / 40) * 0.4 : 0;
         
         for (let x = 0; x < width; x++) {
-            // Calcola distorsione magnetica
-            const dx = x - mouseX;
-            const dy = y - mouseY;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            
-            let magneticOffsetX = 0;
-            let magneticOffsetY = 0;
-            let magneticBrightness = 0;
-            
-            if (dist < magnetRadius && dist > 0) {
-                // Effetto di distorsione che si attenua con la distanza
-                const falloff = 1 - (dist / magnetRadius);
-                const falloffSmooth = falloff * falloff; // Curva più morbida
-                
-                // Offset radiale (spinge i pixel verso l'esterno)
-                magneticOffsetX = (dx / dist) * magnetStrength * falloffSmooth;
-                magneticOffsetY = (dy / dist) * magnetStrength * falloffSmooth;
-                
-                // Aggiunge luminosità al centro della distorsione
-                magneticBrightness = falloffSmooth * 60;
-            }
-            
-            // Posizione sorgente del pixel (con distorsione magnetica)
-            const srcX = Math.floor(x - magneticOffsetX);
-            const srcY = Math.floor(y - magneticOffsetY);
-            
             const i = (y * width + x) * 4;
             
-            // Rumore base costante
-            let value = Math.random() * 180 + 40;
+            // Distanza orizzontale dal mouse per intensità locale
+            const dxMouse = x - mouseX;
+            const localDist = Math.sqrt(dxMouse * dxMouse + dyMouse * dyMouse);
+            const localMagnet = localDist < magnetRadius ? (1 - localDist / magnetRadius) : 0;
             
-            // Applica variazione da onda orizzontale (con distorsione magnetica)
-            const distortedY = srcY + magneticOffsetY * 2;
-            const magneticWave = Math.sin((distortedY + horizontalWaveOffset) * 0.05) * 0.3;
-            value = value * (0.85 + (waveDistortion + magneticWave * 0.3) * 0.15);
+            // Posizione sorgente con shift orizzontale
+            const srcX = x - rowShift * localMagnet;
             
-            // Aggiungi effetto banda scorrevole
-            value = value + bandEffect * 80;
+            // Rumore base
+            let valueR = Math.random() * 180 + 40;
+            let valueG = Math.random() * 180 + 40;
+            let valueB = Math.random() * 180 + 40;
             
-            // Aggiungi luminosità magnetica
-            value = value + magneticBrightness;
+            // Applica variazione da onda orizzontale
+            const waveMult = 0.85 + waveDistortion * 0.15;
+            valueR *= waveMult;
+            valueG *= waveMult;
+            valueB *= waveMult;
             
-            // Clamp value
-            value = Math.min(255, Math.max(0, value));
+            // Effetto banda scorrevole
+            const bandAdd = bandEffect * 80;
+            valueR += bandAdd;
+            valueG += bandAdd;
+            valueB += bandAdd;
             
-            data[i] = value;
-            data[i + 1] = value;
-            data[i + 2] = value;
+            // Aberrazione cromatica magnetica
+            if (colorSeparation > 0 && localMagnet > 0) {
+                const chromaShift = colorSeparation * localMagnet;
+                // R e B separati, G al centro
+                valueR = valueR + chromaShift * 15;
+                valueB = valueB - chromaShift * 15;
+                
+                // Righe orizzontali distorte nell'area magnetica
+                const lineEffect = Math.sin((y + rowShift * 0.5) * 0.8) * 30 * localMagnet;
+                valueR += lineEffect;
+                valueG += lineEffect * 0.5;
+                valueB -= lineEffect;
+            }
+            
+            // Clamp
+            data[i] = Math.min(255, Math.max(0, valueR));
+            data[i + 1] = Math.min(255, Math.max(0, valueG));
+            data[i + 2] = Math.min(255, Math.max(0, valueB));
             data[i + 3] = 255;
         }
     }
