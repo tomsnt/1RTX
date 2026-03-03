@@ -218,6 +218,69 @@ animate();
 window.addEventListener('resize', resizeCanvases);
 
 // ============================================
+// DISTORSIONE LOGO E TESTO
+// ============================================
+
+const centerLogo = document.getElementById('center-logo');
+const glitchCodeEl = document.getElementById('glitch-code');
+
+function distortElements() {
+    // Logo
+    if (centerLogo) {
+        const logoRect = centerLogo.getBoundingClientRect();
+        const logoCenterX = logoRect.left + logoRect.width / 2;
+        const logoCenterY = logoRect.top + logoRect.height / 2;
+        
+        const dx = mouseX - logoCenterX;
+        const dy = mouseY - logoCenterY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        
+        if (dist < 300 && mouseX > 0) {
+            const intensity = (1 - dist / 300);
+            const curve = intensity * intensity;
+            
+            const skewX = curve * 15 * Math.sign(dx);
+            const skewY = curve * 8 * Math.sign(dy);
+            const translateX = curve * 20 * Math.sign(dx);
+            const scaleX = 1 + curve * 0.1;
+            
+            centerLogo.style.transform = `translate(-50%, -50%) skew(${skewX}deg, ${skewY}deg) translateX(${translateX}px) scaleX(${scaleX})`;
+            centerLogo.style.filter = `contrast(1.2) brightness(1.1) blur(${curve * 2}px)`;
+        } else {
+            centerLogo.style.transform = 'translate(-50%, -50%)';
+            centerLogo.style.filter = 'contrast(1.2) brightness(1.1)';
+        }
+    }
+    
+    // Testo glitch
+    if (glitchCodeEl) {
+        const textRect = glitchCodeEl.getBoundingClientRect();
+        const textCenterX = textRect.left + textRect.width / 2;
+        const textCenterY = textRect.top + textRect.height / 2;
+        
+        const dx = mouseX - textCenterX;
+        const dy = mouseY - textCenterY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        
+        if (dist < 250 && mouseX > 0) {
+            const intensity = (1 - dist / 250);
+            const curve = intensity * intensity;
+            
+            const skewX = curve * 20 * Math.sign(dx);
+            const translateX = curve * 30 * Math.sign(dx);
+            
+            glitchCodeEl.style.transform = `translateX(-50%) skewX(${skewX}deg) translateX(${translateX}px)`;
+        } else {
+            glitchCodeEl.style.transform = 'translateX(-50%)';
+        }
+    }
+    
+    requestAnimationFrame(distortElements);
+}
+
+distortElements();
+
+// ============================================
 // MOUSE E TOUCH - DIRETTO
 // ============================================
 

@@ -19,6 +19,7 @@ body {
     z-index: 200;
     pointer-events: none;
     mix-blend-mode: lighten;
+    transition: transform 0.05s ease-out, filter 0.05s ease-out;
 }
 
 #center-logo img {
@@ -122,6 +123,7 @@ body {
     text-align: center;
     text-decoration: none;
     cursor: pointer;
+    transition: transform 0.05s ease-out;
 }
 
 #glitch-display {
