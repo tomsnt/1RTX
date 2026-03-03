@@ -223,10 +223,37 @@ window.addEventListener('resize', resizeCanvases);
 
 const centerLogo = document.getElementById('center-logo');
 const glitchCodeEl = document.getElementById('glitch-code');
+const logoImg = centerLogo ? centerLogo.querySelector('img') : null;
+
+// Crea copie RGB del logo per aberrazione cromatica
+let logoR, logoG, logoB;
+if (logoImg) {
+    // Clone rosso
+    logoR = logoImg.cloneNode(true);
+    logoR.style.position = 'absolute';
+    logoR.style.top = '0';
+    logoR.style.left = '0';
+    logoR.style.mixBlendMode = 'screen';
+    logoR.style.filter = 'brightness(1) saturate(0) sepia(1) hue-rotate(-50deg) saturate(5)';
+    logoR.style.opacity = '0';
+    logoR.style.pointerEvents = 'none';
+    centerLogo.appendChild(logoR);
+    
+    // Clone blu
+    logoB = logoImg.cloneNode(true);
+    logoB.style.position = 'absolute';
+    logoB.style.top = '0';
+    logoB.style.left = '0';
+    logoB.style.mixBlendMode = 'screen';
+    logoB.style.filter = 'brightness(1) saturate(0) sepia(1) hue-rotate(180deg) saturate(5)';
+    logoB.style.opacity = '0';
+    logoB.style.pointerEvents = 'none';
+    centerLogo.appendChild(logoB);
+}
 
 function distortElements() {
     // Logo
-    if (centerLogo) {
+    if (centerLogo && logoImg) {
         const logoRect = centerLogo.getBoundingClientRect();
         const logoCenterX = logoRect.left + logoRect.width / 2;
         const logoCenterY = logoRect.top + logoRect.height / 2;
@@ -235,21 +262,67 @@ function distortElements() {
         const dy = mouseY - logoCenterY;
         const dist = Math.sqrt(dx * dx + dy * dy);
         
-        if (dist < 300 && mouseX > 0) {
-            const intensity = (1 - dist / 300);
+        if (dist < 350 && mouseX > 0) {
+            const intensity = (1 - dist / 350);
             const curve = intensity * intensity;
             
-            const skewX = curve * 15 * Math.sign(dx);
-            const skewY = curve * 8 * Math.sign(dy);
-            const translateX = curve * 20 * Math.sign(dx);
-            const scaleX = 1 + curve * 0.1;
+            // Effetto slice - il logo si divide in fasce orizzontali
+            const time = Date.now() * 0.01;
+            const slice1 = Math.sin(time) * curve * 20;
+            const slice2 = Math.sin(time + 2) * curve * 15;
+            const slice3 = Math.sin(time + 4) * curve * 25;
             
-            centerLogo.style.transform = `translate(-50%, -50%) skew(${skewX}deg, ${skewY}deg) translateX(${translateX}px) scaleX(${scaleX})`;
-            centerLogo.style.filter = `contrast(1.2) brightness(1.1) blur(${curve * 2}px)`;
+            // Clip path per dividere in segmenti con offset diversi
+            const segments = 8;
+            let clipPath = '';
+            for (let i = 0; i < segments; i++) {
+                const y1 = (i / segments) * 100;
+                const y2 = ((i + 1) / segments) * 100;
+                const offset = Math.sin(time + i * 0.8) * curve * 15;
+                // Non possiamo fare offset per segmento con clip-path, usiamo altro approccio
+            }
+            
+            // Distorsione principale caotica
+            const skewX = (Math.sin(time * 1.3) * curve * 25);
+            const skewY = (Math.cos(time * 0.9) * curve * 12);
+            const translateX = Math.sin(time * 2.1) * curve * 30;
+            const translateY = Math.cos(time * 1.7) * curve * 15;
+            const scaleX = 1 + Math.sin(time * 3) * curve * 0.15;
+            const scaleY = 1 + Math.cos(time * 2.5) * curve * 0.1;
+            const rotate = Math.sin(time * 0.7) * curve * 5;
+            
+            // Transform principale
+            logoImg.style.transform = `skew(${skewX}deg, ${skewY}deg) translate(${translateX}px, ${translateY}px) scale(${scaleX}, ${scaleY}) rotate(${rotate}deg)`;
+            
+            // Flash di brightness random
+            const flash = Math.random() > 0.9 ? 2 : 1 + curve * 0.3;
+            const blur = curve * 1.5;
+            logoImg.style.filter = `contrast(${1 + curve * 0.5}) brightness(${flash}) blur(${blur}px)`;
+            
+            // Aberrazione cromatica RGB split
+            if (logoR && logoB) {
+                const chromaOffset = curve * 12;
+                logoR.style.opacity = curve * 0.6;
+                logoR.style.transform = `translate(${-chromaOffset + slice1}px, ${slice2}px)`;
+                logoB.style.opacity = curve * 0.6;
+                logoB.style.transform = `translate(${chromaOffset + slice3}px, ${-slice1}px)`;
+            }
+            
+            // Glitch random occasionale
+            if (Math.random() > 0.92) {
+                const glitchX = (Math.random() - 0.5) * 40;
+                const glitchSkew = (Math.random() - 0.5) * 30;
+                logoImg.style.transform = `skew(${glitchSkew}deg, 0deg) translateX(${glitchX}px)`;
+            }
+            
         } else {
-            centerLogo.style.transform = 'translate(-50%, -50%)';
-            centerLogo.style.filter = 'contrast(1.2) brightness(1.1)';
+            logoImg.style.transform = '';
+            logoImg.style.filter = 'contrast(1.2) brightness(1.1)';
+            if (logoR) logoR.style.opacity = '0';
+            if (logoB) logoB.style.opacity = '0';
         }
+        
+        centerLogo.style.transform = 'translate(-50%, -50%)';
     }
     
     // Testo glitch
@@ -265,9 +338,10 @@ function distortElements() {
         if (dist < 250 && mouseX > 0) {
             const intensity = (1 - dist / 250);
             const curve = intensity * intensity;
+            const time = Date.now() * 0.01;
             
-            const skewX = curve * 20 * Math.sign(dx);
-            const translateX = curve * 30 * Math.sign(dx);
+            const skewX = Math.sin(time * 1.5) * curve * 25;
+            const translateX = Math.sin(time * 2) * curve * 20;
             
             glitchCodeEl.style.transform = `translateX(-50%) skewX(${skewX}deg) translateX(${translateX}px)`;
         } else {

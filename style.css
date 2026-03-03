@@ -19,7 +19,6 @@ body {
     z-index: 200;
     pointer-events: none;
     mix-blend-mode: lighten;
-    transition: transform 0.05s ease-out, filter 0.05s ease-out;
 }
 
 #center-logo img {
@@ -29,6 +28,7 @@ body {
     height: auto;
     filter: contrast(1.2) brightness(1.1);
     animation: logoFlicker 0.1s infinite;
+    will-change: transform, filter;
 }
 
 @keyframes logoFlicker {
