@@ -10,6 +10,7 @@ const psychedelicCtx = psychedelicCanvas.getContext('2d');
 // Mouse e scia
 let mouseX = -1000;
 let mouseY = -1000;
+let isHoveringGlitch = false;
 const magnetRadius = 200;
 const trailLength = 12;
 const trail = [];
@@ -23,8 +24,14 @@ function updateTrail() {
         trail[i].x = trail[i - 1].x;
         trail[i].y = trail[i - 1].y;
     }
-    trail[0].x = mouseX;
-    trail[0].y = mouseY;
+    // Non aggiornare la scia se in hover sulla scritta (blocca effetto noise)
+    if (!isHoveringGlitch) {
+        trail[0].x = mouseX;
+        trail[0].y = mouseY;
+    } else {
+        trail[0].x = -1000;
+        trail[0].y = -1000;
+    }
 }
 
 function resizeCanvases() {
@@ -441,20 +448,17 @@ distortElements();
 
 document.addEventListener('mousemove', function(e) {
     const glitchCodeElement = document.getElementById('glitch-code');
-    const isOverGlitch = glitchCodeElement && glitchCodeElement.matches(':hover');
+    isHoveringGlitch = glitchCodeElement && glitchCodeElement.matches(':hover');
     
-    if (!isOverGlitch) {
-        mouseX = e.clientX;
-        mouseY = e.clientY;
-    } else {
-        mouseX = -1000;
-        mouseY = -1000;
-    }
+    // Sempre traccia la posizione del mouse per la decodifica
+    mouseX = e.clientX;
+    mouseY = e.clientY;
 });
 
 document.addEventListener('mouseleave', function() {
     mouseX = -1000;
     mouseY = -1000;
+    isHoveringGlitch = false;
 });
 
 // ============================================
