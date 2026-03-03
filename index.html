@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BE YOURSELF FREELY</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=2">
 </head>
 <body>
     <!-- Canvas per il logo con effetto warp fluido -->
-    <canvas id="logo-canvas"></canvas>
+    <canvas id="logo-canvas" style="position:fixed; top:35%; left:50%; transform:translate(-50%,-50%); z-index:200; pointer-events:none; mix-blend-mode:lighten;"></canvas>
     
     <!-- Immagine centrata (nascosta, usata come source) -->
     <div id="center-logo" style="display:none;">
@@ -35,6 +35,6 @@
     <!-- Bande di interferenza -->
     <div id="interference-bands"></div>
     
-    <script src="script.js"></script>
+    <script src="script.js?v=2"></script>
 </body>
 </html>
