@@ -7,6 +7,14 @@ const noiseCtx = noiseCanvas.getContext('2d');
 const psychedelicCanvas = document.getElementById('psychedelic');
 const psychedelicCtx = psychedelicCanvas.getContext('2d');
 
+// Posizione mouse per effetto magnetico
+let mouseX = -1000;
+let mouseY = -1000;
+let targetMouseX = -1000;
+let targetMouseY = -1000;
+const magnetRadius = 150; // Raggio dell'effetto magnetico
+const magnetStrength = 25; // Intensità della distorsione
+
 function resizeCanvases() {
     noiseCanvas.width = window.innerWidth;
     noiseCanvas.height = window.innerHeight;
@@ -24,6 +32,10 @@ function generateNoise() {
     const imageData = noiseCtx.createImageData(width, height);
     const data = imageData.data;
     
+    // Smooth follow del mouse
+    mouseX += (targetMouseX - mouseX) * 0.15;
+    mouseY += (targetMouseY - mouseY) * 0.15;
+    
     // Aggiorna offset per onde orizzontali
     horizontalWaveOffset += 2;
     
@@ -38,16 +50,47 @@ function generateNoise() {
         const bandEffect = distToBand < 40 ? (1 - distToBand / 40) * 0.4 : 0;
         
         for (let x = 0; x < width; x++) {
+            // Calcola distorsione magnetica
+            const dx = x - mouseX;
+            const dy = y - mouseY;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            
+            let magneticOffsetX = 0;
+            let magneticOffsetY = 0;
+            let magneticBrightness = 0;
+            
+            if (dist < magnetRadius && dist > 0) {
+                // Effetto di distorsione che si attenua con la distanza
+                const falloff = 1 - (dist / magnetRadius);
+                const falloffSmooth = falloff * falloff; // Curva più morbida
+                
+                // Offset radiale (spinge i pixel verso l'esterno)
+                magneticOffsetX = (dx / dist) * magnetStrength * falloffSmooth;
+                magneticOffsetY = (dy / dist) * magnetStrength * falloffSmooth;
+                
+                // Aggiunge luminosità al centro della distorsione
+                magneticBrightness = falloffSmooth * 60;
+            }
+            
+            // Posizione sorgente del pixel (con distorsione magnetica)
+            const srcX = Math.floor(x - magneticOffsetX);
+            const srcY = Math.floor(y - magneticOffsetY);
+            
             const i = (y * width + x) * 4;
             
             // Rumore base costante
             let value = Math.random() * 180 + 40;
             
-            // Applica variazione da onda orizzontale
-            value = value * (0.85 + waveDistortion * 0.15);
+            // Applica variazione da onda orizzontale (con distorsione magnetica)
+            const distortedY = srcY + magneticOffsetY * 2;
+            const magneticWave = Math.sin((distortedY + horizontalWaveOffset) * 0.05) * 0.3;
+            value = value * (0.85 + (waveDistortion + magneticWave * 0.3) * 0.15);
             
             // Aggiungi effetto banda scorrevole
             value = value + bandEffect * 80;
+            
+            // Aggiungi luminosità magnetica
+            value = value + magneticBrightness;
             
             // Clamp value
             value = Math.min(255, Math.max(0, value));
@@ -139,105 +182,12 @@ animate();
 window.addEventListener('resize', resizeCanvases);
 
 // ============================================
-// EFFETTO SCIA DISTURBO - PIÙ GRANDE
+// EFFETTO DISTORSIONE MAGNETICA
+// (L'effetto è integrato in generateNoise)
 // ============================================
 
-const trailsContainer = document.getElementById('distortion-trails');
-const interferenceBands = document.getElementById('interference-bands');
 let lastMouseX = 0;
 let lastMouseY = 0;
-let lastTrailTime = 0;
-
-function createDistortionTrail(x, y, velocityX, velocityY) {
-    const trail = document.createElement('div');
-    trail.className = 'distortion-trail';
-    
-    // Dimensioni grandi
-    const speed = Math.sqrt(velocityX * velocityX + velocityY * velocityY);
-    const width = Math.min(800, Math.max(200, speed * 8));
-    const height = Math.random() * 30 + 15;
-    
-    const offsetY = (Math.random() - 0.5) * 80;
-    
-    trail.style.left = x + 'px';
-    trail.style.top = (y + offsetY) + 'px';
-    trail.style.width = width + 'px';
-    trail.style.height = height + 'px';
-    
-    // Bianco e nero
-    const brightness = Math.random() * 40 + 60;
-    trail.style.background = 'linear-gradient(90deg, transparent, rgba(' + brightness + ',' + brightness + ',' + brightness + ', 0.5), rgba(255, 255, 255, 0.4), rgba(' + brightness + ',' + brightness + ',' + brightness + ', 0.3), transparent)';
-    
-    // Glitch casuale
-    if (Math.random() > 0.3) {
-        const glitchOffset = (Math.random() - 0.5) * 40;
-        trail.style.transform = 'translateX(-50%) translateY(-50%) skewX(' + glitchOffset + 'deg)';
-    }
-    
-    trailsContainer.appendChild(trail);
-    
-    setTimeout(function() {
-        trail.remove();
-    }, 1200);
-}
-
-function createInterferenceBand(y) {
-    const band = document.createElement('div');
-    band.className = 'interference-band';
-    band.style.top = y + 'px';
-    band.style.height = (Math.random() * 100 + 50) + 'px';
-    
-    const gray = Math.random() * 100 + 155;
-    band.style.background = 'linear-gradient(180deg, transparent, rgba(' + gray + ',' + gray + ',' + gray + ', 0.15), rgba(255, 255, 255, 0.1), transparent)';
-    
-    interferenceBands.appendChild(band);
-    
-    setTimeout(function() {
-        band.remove();
-    }, 500);
-}
-
-function createGlitchBlock(x, y) {
-    const block = document.createElement('div');
-    block.className = 'glitch-block';
-    
-    const width = Math.random() * 200 + 50;
-    const height = Math.random() * 30 + 10;
-    
-    block.style.left = x + 'px';
-    block.style.top = y + 'px';
-    block.style.width = width + 'px';
-    block.style.height = height + 'px';
-    
-    const gray = Math.random() * 155 + 100;
-    block.style.background = 'rgba(' + gray + ',' + gray + ',' + gray + ', 0.5)';
-    
-    trailsContainer.appendChild(block);
-    
-    setTimeout(function() {
-        block.remove();
-    }, 300);
-}
-
-function createMultipleTrails(x, y, velocityX, velocityY) {
-    const trailCount = Math.min(8, Math.floor(Math.abs(velocityX) / 8) + 2);
-    
-    for (let i = 0; i < trailCount; i++) {
-        setTimeout(function() {
-            createDistortionTrail(x, y, velocityX, velocityY);
-            
-            // Aggiungi bande di interferenza casuali
-            if (Math.random() > 0.6) {
-                createInterferenceBand(y + (Math.random() - 0.5) * 200);
-            }
-            
-            // Aggiungi blocchi glitch casuali
-            if (Math.random() > 0.7) {
-                createGlitchBlock(x + (Math.random() - 0.5) * 300, y + (Math.random() - 0.5) * 100);
-            }
-        }, i * 15);
-    }
-}
 
 document.addEventListener('mousemove', function(e) {
     const currentTime = Date.now();
@@ -246,19 +196,27 @@ document.addEventListener('mousemove', function(e) {
     const velocityY = e.clientY - lastMouseY;
     const speed = Math.sqrt(velocityX * velocityX + velocityY * velocityY);
     
-    // Non generare effetti se il mouse è sopra il glitch-code
+    // Aggiorna posizione mouse per effetto magnetico
     const glitchCodeElement = document.getElementById('glitch-code');
     const isOverGlitch = glitchCodeElement && glitchCodeElement.matches(':hover');
     
-    // Reattivo ma senza cambiare intensità rumore
-    if (speed > 5 && currentTime - lastTrailTime > 40 && !isOverGlitch) {
-        createMultipleTrails(e.clientX, e.clientY, velocityX, velocityY);
-        lastTrailTime = currentTime;
-        // Niente modifica al rumore - rimane costante
+    if (!isOverGlitch) {
+        targetMouseX = e.clientX;
+        targetMouseY = e.clientY;
+    } else {
+        // Sposta il magnete fuori dallo schermo quando sopra il testo glitch
+        targetMouseX = -1000;
+        targetMouseY = -1000;
     }
     
     lastMouseX = e.clientX;
     lastMouseY = e.clientY;
+});
+
+// Quando il mouse esce dalla finestra, rimuovi l'effetto magnetico
+document.addEventListener('mouseleave', function() {
+    targetMouseX = -1000;
+    targetMouseY = -1000;
 });
 
 // ============================================
@@ -267,65 +225,31 @@ document.addEventListener('mousemove', function(e) {
 
 let lastTouchX = 0;
 let lastTouchY = 0;
-let lastTouchTime = 0;
-let activeTrails = 0;
-const MAX_ACTIVE_TRAILS = 25; // Limita elementi DOM attivi
 
 document.addEventListener('touchstart', function(e) {
     if (e.touches.length > 0) {
         lastTouchX = e.touches[0].clientX;
         lastTouchY = e.touches[0].clientY;
+        targetMouseX = lastTouchX;
+        targetMouseY = lastTouchY;
     }
 }, { passive: true });
 
 document.addEventListener('touchmove', function(e) {
     if (e.touches.length > 0) {
         const touch = e.touches[0];
-        const currentTime = Date.now();
-        
-        const velocityX = touch.clientX - lastTouchX;
-        const velocityY = touch.clientY - lastTouchY;
-        const speed = Math.sqrt(velocityX * velocityX + velocityY * velocityY);
-        
-        // Throttle bilanciato (60ms) con limite elementi
-        if (speed > 5 && currentTime - lastTouchTime > 60 && activeTrails < MAX_ACTIVE_TRAILS) {
-            createMobileTrail(touch.clientX, touch.clientY, velocityX, velocityY);
-            lastTouchTime = currentTime;
-        }
-        
+        targetMouseX = touch.clientX;
+        targetMouseY = touch.clientY;
         lastTouchX = touch.clientX;
         lastTouchY = touch.clientY;
     }
 }, { passive: true });
 
-// Versione ottimizzata per mobile
-function createMobileTrail(x, y, velocityX, velocityY) {
-    activeTrails++;
-    
-    const trail = document.createElement('div');
-    trail.className = 'distortion-trail';
-    
-    const speed = Math.sqrt(velocityX * velocityX + velocityY * velocityY);
-    const width = Math.min(600, Math.max(150, speed * 6));
-    const height = Math.random() * 25 + 12;
-    
-    const offsetY = (Math.random() - 0.5) * 50;
-    
-    trail.style.left = x + 'px';
-    trail.style.top = (y + offsetY) + 'px';
-    trail.style.width = width + 'px';
-    trail.style.height = height + 'px';
-    
-    const brightness = Math.random() * 40 + 60;
-    trail.style.background = 'linear-gradient(90deg, transparent, rgba(' + brightness + ',' + brightness + ',' + brightness + ', 0.5), rgba(255, 255, 255, 0.4), transparent)';
-    
-    trailsContainer.appendChild(trail);
-    
-    setTimeout(function() {
-        trail.remove();
-        activeTrails--;
-    }, 800);
-}
+document.addEventListener('touchend', function() {
+    // Rimuovi effetto magnetico quando il dito si alza
+    targetMouseX = -1000;
+    targetMouseY = -1000;
+}, { passive: true });
 
 // ============================================
 // EFFETTI CASUALI AUTOMATICI
