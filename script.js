@@ -374,30 +374,34 @@ function distortElements() {
         if (dist < 150 && mouseX > 0) {
             // Vicino alla scritta
             if (isMobile && glitchDisplay) {
-                // Rimuovi effetto visivo glitch
+                // Rimuovi effetto glitch ma mantieni glow bianco
                 glitchDisplay.style.animation = 'none';
-                glitchDisplay.style.textShadow = 'none';
+                glitchDisplay.style.textShadow = '0 0 10px rgba(255, 255, 255, 0.9), 0 0 20px rgba(255, 255, 255, 0.5), 0 0 30px rgba(255, 255, 255, 0.3)';
                 glitchDisplay.style.opacity = '1';
+                
+                // Niente wobble su mobile quando vicino
+                glitchCodeEl.style.transform = 'translateX(-50%)';
                 
                 // Avvia decodifica se non già attiva
                 if (!mobileNearText) {
                     mobileNearText = true;
                     startDecoding();
                 }
+            } else {
+                // Desktop: effetto wobble normale
+                const intensity = (1 - dist / 150);
+                const curve = intensity * intensity;
+                const time = Date.now() * 0.01;
+                
+                const skewX = Math.sin(time * 1.5) * curve * 25;
+                const translateX = Math.sin(time * 2) * curve * 20;
+                
+                glitchCodeEl.style.transform = `translateX(-50%) skewX(${skewX}deg) translateX(${translateX}px)`;
             }
-            
-            const intensity = (1 - dist / 150);
-            const curve = intensity * intensity;
-            const time = Date.now() * 0.01;
-            
-            const skewX = Math.sin(time * 1.5) * curve * 25;
-            const translateX = Math.sin(time * 2) * curve * 20;
-            
-            glitchCodeEl.style.transform = `translateX(-50%) skewX(${skewX}deg) translateX(${translateX}px)`;
         } else {
             // Lontano dalla scritta
             if (isMobile && glitchDisplay) {
-                // Ripristina effetto glitch
+                // Ripristina effetto glitch completo
                 glitchDisplay.style.animation = '';
                 glitchDisplay.style.textShadow = '';
                 glitchDisplay.style.opacity = '';
