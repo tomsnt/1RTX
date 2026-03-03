@@ -218,113 +218,165 @@ animate();
 window.addEventListener('resize', resizeCanvases);
 
 // ============================================
-// DISTORSIONE LOGO E TESTO
+// LOGO CANVAS CON WARP FLUIDO
 // ============================================
 
-const centerLogo = document.getElementById('center-logo');
+const logoCanvas = document.getElementById('logo-canvas');
+const logoCtx = logoCanvas.getContext('2d');
+const centerLogoDiv = document.getElementById('center-logo');
+const logoImg = centerLogoDiv ? centerLogoDiv.querySelector('img') : null;
 const glitchCodeEl = document.getElementById('glitch-code');
-const logoImg = centerLogo ? centerLogo.querySelector('img') : null;
 
-// Crea copie RGB del logo per aberrazione cromatica
-let logoR, logoG, logoB;
-if (logoImg) {
-    // Clone rosso
-    logoR = logoImg.cloneNode(true);
-    logoR.style.position = 'absolute';
-    logoR.style.top = '0';
-    logoR.style.left = '0';
-    logoR.style.mixBlendMode = 'screen';
-    logoR.style.filter = 'brightness(1) saturate(0) sepia(1) hue-rotate(-50deg) saturate(5)';
-    logoR.style.opacity = '0';
-    logoR.style.pointerEvents = 'none';
-    centerLogo.appendChild(logoR);
+let logoLoaded = false;
+let logoWidth = 300;
+let logoHeight = 300;
+
+// Configura il canvas del logo
+function setupLogoCanvas() {
+    logoCanvas.style.position = 'fixed';
+    logoCanvas.style.top = '50%';
+    logoCanvas.style.left = '50%';
+    logoCanvas.style.transform = 'translate(-50%, -50%)';
+    logoCanvas.style.zIndex = '200';
+    logoCanvas.style.pointerEvents = 'none';
+    logoCanvas.style.mixBlendMode = 'lighten';
     
-    // Clone blu
-    logoB = logoImg.cloneNode(true);
-    logoB.style.position = 'absolute';
-    logoB.style.top = '0';
-    logoB.style.left = '0';
-    logoB.style.mixBlendMode = 'screen';
-    logoB.style.filter = 'brightness(1) saturate(0) sepia(1) hue-rotate(180deg) saturate(5)';
-    logoB.style.opacity = '0';
-    logoB.style.pointerEvents = 'none';
-    centerLogo.appendChild(logoB);
+    // Dimensioni maggiori per permettere la distorsione
+    logoCanvas.width = 500;
+    logoCanvas.height = 500;
 }
 
-function distortElements() {
-    // Logo
-    if (centerLogo && logoImg) {
-        const logoRect = centerLogo.getBoundingClientRect();
-        const logoCenterX = logoRect.left + logoRect.width / 2;
-        const logoCenterY = logoRect.top + logoRect.height / 2;
-        
-        const dx = mouseX - logoCenterX;
-        const dy = mouseY - logoCenterY;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        
-        if (dist < 350 && mouseX > 0) {
-            const intensity = (1 - dist / 350);
-            const curve = intensity * intensity;
+setupLogoCanvas();
+
+// Aspetta che il logo sia caricato
+if (logoImg) {
+    if (logoImg.complete) {
+        logoLoaded = true;
+        logoWidth = Math.min(logoImg.naturalWidth, 300);
+        logoHeight = Math.min(logoImg.naturalHeight, 300);
+    } else {
+        logoImg.onload = () => {
+            logoLoaded = true;
+            logoWidth = Math.min(logoImg.naturalWidth, 300);
+            logoHeight = Math.min(logoImg.naturalHeight, 300);
+        };
+    }
+}
+
+// Funzione di warp fluido
+function drawWarpedLogo() {
+    if (!logoLoaded || !logoImg) return;
+    
+    const canvasCenterX = logoCanvas.width / 2;
+    const canvasCenterY = logoCanvas.height / 2;
+    
+    // Posizione del mouse relativa al centro del canvas (che è al centro dello schermo)
+    const screenCenterX = window.innerWidth / 2;
+    const screenCenterY = window.innerHeight / 2;
+    const relMouseX = mouseX - screenCenterX;
+    const relMouseY = mouseY - screenCenterY;
+    
+    const dist = Math.sqrt(relMouseX * relMouseX + relMouseY * relMouseY);
+    const maxDist = 400;
+    const intensity = Math.max(0, 1 - dist / maxDist);
+    
+    logoCtx.clearRect(0, 0, logoCanvas.width, logoCanvas.height);
+    
+    // Griglia mesh per la distorsione
+    const gridSize = 12; // Numero di divisioni
+    const cellWidth = logoWidth / gridSize;
+    const cellHeight = logoHeight / gridSize;
+    
+    const startX = canvasCenterX - logoWidth / 2;
+    const startY = canvasCenterY - logoHeight / 2;
+    
+    // Per ogni cella della griglia
+    for (let gy = 0; gy < gridSize; gy++) {
+        for (let gx = 0; gx < gridSize; gx++) {
+            // Posizione originale della cella
+            const srcX = (gx / gridSize) * logoWidth;
+            const srcY = (gy / gridSize) * logoHeight;
             
-            // Effetto slice - il logo si divide in fasce orizzontali
-            const time = Date.now() * 0.01;
-            const slice1 = Math.sin(time) * curve * 20;
-            const slice2 = Math.sin(time + 2) * curve * 15;
-            const slice3 = Math.sin(time + 4) * curve * 25;
-            
-            // Clip path per dividere in segmenti con offset diversi
-            const segments = 8;
-            let clipPath = '';
-            for (let i = 0; i < segments; i++) {
-                const y1 = (i / segments) * 100;
-                const y2 = ((i + 1) / segments) * 100;
-                const offset = Math.sin(time + i * 0.8) * curve * 15;
-                // Non possiamo fare offset per segmento con clip-path, usiamo altro approccio
+            // Calcola la distorsione per ogni angolo della cella
+            const corners = [];
+            for (let cy = 0; cy <= 1; cy++) {
+                for (let cx = 0; cx <= 1; cx++) {
+                    const origX = startX + (gx + cx) * cellWidth;
+                    const origY = startY + (gy + cy) * cellHeight;
+                    
+                    // Distanza dal punto al mouse
+                    const dx = relMouseX - (origX - canvasCenterX);
+                    const dy = relMouseY - (origY - canvasCenterY);
+                    const pointDist = Math.sqrt(dx * dx + dy * dy);
+                    
+                    // Forza di attrazione - più forte quando vicino
+                    const pullRadius = 250;
+                    const pull = Math.max(0, 1 - pointDist / pullRadius);
+                    const pullStrength = pull * pull * pull; // Curva cubica per effetto più fluido
+                    
+                    // Sposta il punto verso il mouse
+                    const warpX = origX + dx * pullStrength * 0.4;
+                    const warpY = origY + dy * pullStrength * 0.4;
+                    
+                    corners.push({ x: warpX, y: warpY });
+                }
             }
             
-            // Distorsione principale caotica
-            const skewX = (Math.sin(time * 1.3) * curve * 25);
-            const skewY = (Math.cos(time * 0.9) * curve * 12);
-            const translateX = Math.sin(time * 2.1) * curve * 30;
-            const translateY = Math.cos(time * 1.7) * curve * 15;
-            const scaleX = 1 + Math.sin(time * 3) * curve * 0.15;
-            const scaleY = 1 + Math.cos(time * 2.5) * curve * 0.1;
-            const rotate = Math.sin(time * 0.7) * curve * 5;
+            // Disegna la cella distorta usando drawImage con clipping
+            // corners: [topLeft, topRight, bottomLeft, bottomRight]
             
-            // Transform principale
-            logoImg.style.transform = `skew(${skewX}deg, ${skewY}deg) translate(${translateX}px, ${translateY}px) scale(${scaleX}, ${scaleY}) rotate(${rotate}deg)`;
+            // Usa una trasformazione affine approssimata
+            const topLeft = corners[0];
+            const topRight = corners[1];
+            const bottomLeft = corners[2];
+            const bottomRight = corners[3];
             
-            // Flash di brightness random
-            const flash = Math.random() > 0.9 ? 2 : 1 + curve * 0.3;
-            const blur = curve * 1.5;
-            logoImg.style.filter = `contrast(${1 + curve * 0.5}) brightness(${flash}) blur(${blur}px)`;
+            // Centro della cella distorta
+            const centerX = (topLeft.x + topRight.x + bottomLeft.x + bottomRight.x) / 4;
+            const centerY = (topLeft.y + topRight.y + bottomLeft.y + bottomRight.y) / 4;
             
-            // Aberrazione cromatica RGB split
-            if (logoR && logoB) {
-                const chromaOffset = curve * 12;
-                logoR.style.opacity = curve * 0.6;
-                logoR.style.transform = `translate(${-chromaOffset + slice1}px, ${slice2}px)`;
-                logoB.style.opacity = curve * 0.6;
-                logoB.style.transform = `translate(${chromaOffset + slice3}px, ${-slice1}px)`;
-            }
+            // Calcola scala e rotazione approssimate
+            const scaleX = Math.sqrt(
+                Math.pow(topRight.x - topLeft.x, 2) + 
+                Math.pow(topRight.y - topLeft.y, 2)
+            ) / cellWidth;
             
-            // Glitch random occasionale
-            if (Math.random() > 0.92) {
-                const glitchX = (Math.random() - 0.5) * 40;
-                const glitchSkew = (Math.random() - 0.5) * 30;
-                logoImg.style.transform = `skew(${glitchSkew}deg, 0deg) translateX(${glitchX}px)`;
-            }
+            const scaleY = Math.sqrt(
+                Math.pow(bottomLeft.x - topLeft.x, 2) + 
+                Math.pow(bottomLeft.y - topLeft.y, 2)
+            ) / cellHeight;
             
-        } else {
-            logoImg.style.transform = '';
-            logoImg.style.filter = 'contrast(1.2) brightness(1.1)';
-            if (logoR) logoR.style.opacity = '0';
-            if (logoB) logoB.style.opacity = '0';
+            const angle = Math.atan2(topRight.y - topLeft.y, topRight.x - topLeft.x);
+            
+            logoCtx.save();
+            logoCtx.translate(centerX, centerY);
+            logoCtx.rotate(angle);
+            logoCtx.scale(scaleX, scaleY);
+            
+            // Disegna la porzione corrispondente dell'immagine
+            logoCtx.drawImage(
+                logoImg,
+                srcX, srcY, cellWidth + 1, cellHeight + 1,  // Source
+                -cellWidth / 2, -cellHeight / 2, cellWidth + 1, cellHeight + 1  // Destination
+            );
+            
+            logoCtx.restore();
         }
-        
-        centerLogo.style.transform = 'translate(-50%, -50%)';
     }
     
+    // Effetto flicker leggero
+    logoCtx.globalAlpha = 0.85 + Math.random() * 0.1;
+}
+
+// Animazione del logo warpato
+function animateLogo() {
+    drawWarpedLogo();
+    requestAnimationFrame(animateLogo);
+}
+
+animateLogo();
+
+function distortElements() {
     // Testo glitch
     if (glitchCodeEl) {
         const textRect = glitchCodeEl.getBoundingClientRect();
