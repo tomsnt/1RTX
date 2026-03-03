@@ -233,12 +233,19 @@ let logoHeight = 300;
 
 // Configura il canvas del logo
 function setupLogoCanvas() {
+    const isMobile = window.innerWidth <= 768;
+    
     logoCanvas.width = 500;
     logoCanvas.height = 500;
-    
-    // Aggiorna posizione dinamicamente
-    const isMobile = window.innerWidth <= 768;
-    logoCanvas.style.top = isMobile ? '20vh' : '25vh';
+    logoCanvas.style.cssText = `
+        position: fixed !important;
+        left: 50% !important;
+        top: ${isMobile ? '20vh' : '15vh'} !important;
+        transform: translate(-50%, -50%) !important;
+        z-index: 200 !important;
+        pointer-events: none !important;
+        mix-blend-mode: lighten !important;
+    `;
 }
 
 setupLogoCanvas();
