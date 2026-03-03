@@ -147,7 +147,13 @@ body {
 /* Mobile */
 @media (max-width: 768px) {
     #center-logo {
-        top: 40%;
+        top: 20vh;
+        transform: translate(-50%, 0);
+    }
+    
+    #logo-canvas {
+        top: 20vh !important;
+        transform: translate(-50%, 0) !important;
     }
     
     #glitch-code {
