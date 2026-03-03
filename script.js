@@ -351,71 +351,100 @@ function createRollingBar() {
 // Le onde di distorsione orizzontali sono integrate nel rumore
 
 // ============================================
-// TIMER CIFRATO - Countdown con simboli
+// EFFETTO GLITCH - Caratteri che sfarfallano
 // ============================================
 
-// Mappa cifratura COMPLESSA:
-// Decine: Δ=0 Ω=1 Π=2 Ж=3 Ҫ=4 Ɣ=5 ҂=6 ₪=7 Ƨ=8 ᛉ=9
-// Unità:  Ø=0 I=1 Z=2 Ξ=3 Ψ=4 Σ=5 G=6 Λ=7 ∞=8 Φ=9
-const cipherTens = {
-    '0': 'Δ',
-    '1': 'Ω',
-    '2': 'Π',
-    '3': 'Ж',
-    '4': 'Ҫ',
-    '5': 'Ɣ',
-    '6': '҂',
-    '7': '₪',
-    '8': 'Ƨ',
-    '9': 'ᛉ'
-};
+// Caratteri per l'effetto glitch (stile Minecraft enchantment table)
+const glitchChars = [
+    'Δ', 'Ω', 'Π', 'Ж', 'Ҫ', 'Ɣ', '҂', '₪', 'Ƨ', 'ᛉ',
+    'Ø', 'I', 'Z', 'Ξ', 'Ψ', 'Σ', 'G', 'Λ', '∞', 'Φ',
+    '◊', '▓', '░', '█', '▄', '▀', '■', '□', '▪', '▫',
+    'ᚠ', 'ᚢ', 'ᚦ', 'ᚨ', 'ᚱ', 'ᚲ', 'ᚷ', 'ᚹ', 'ᚺ', 'ᚾ',
+    'ᛁ', 'ᛃ', 'ᛇ', 'ᛈ', 'ᛏ', 'ᛒ', 'ᛖ', 'ᛗ', 'ᛚ', 'ᛞ',
+    '⌐', '¬', '½', '¼', '░', '▒', '▓', '│', '┤', '╡',
+    '₿', '₴', '₵', '₸', '₹', '₺', '₻', '₼', '₽', '₾',
+    'Ꮬ', 'Ꮭ', 'Ꮮ', 'Ꮯ', 'Ꮰ', 'Ꮱ', 'Ꮲ', 'Ꮳ', 'Ꮴ', 'Ꮵ',
+    '⌘', '⏎', '⌥', '⇧', '⌫', '⌦', '↵', '⇥', '⌤', '⎋',
+    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+    'A', 'B', 'C', 'D', 'E', 'F', 'X', 'Y', 'Z', 'W'
+];
 
-const cipherUnits = {
-    '0': 'Ø',
-    '1': 'I',
-    '2': 'Z',
-    '3': 'Ξ',
-    '4': 'Ψ',
-    '5': 'Σ',
-    '6': 'G',
-    '7': 'Λ',
-    '8': '∞',
-    '9': 'Φ'
-};
+const glitchDisplay = document.getElementById('glitch-display');
+const codeLength = 16; // Lunghezza fissa del codice
+let isHovering = false;
 
-// Data target del countdown (27 febbraio 2026 alle 21:00)
-const targetDate = new Date('2026-02-27T21:00:00');
-
-function encryptNumber(num) {
-    const str = String(num).padStart(2, '0');
-    return cipherTens[str[0]] + cipherUnits[str[1]];
+// Genera un carattere glitch casuale
+function getRandomGlitchChar() {
+    return glitchChars[Math.floor(Math.random() * glitchChars.length)];
 }
 
-function updateEncryptedTimer() {
-    const now = new Date();
-    const diff = targetDate - now;
-    
-    if (diff <= 0) {
-        document.getElementById('timer-display').textContent = 'ØΔ:ØΔ:ØΔ:ØΔ';
-        return;
+// Genera una stringa glitch con separatori
+function generateGlitchString() {
+    let result = '';
+    for (let i = 0; i < codeLength; i++) {
+        // Aggiungi separatori ogni 4 caratteri
+        if (i > 0 && i % 4 === 0) {
+            result += Math.random() > 0.5 ? ':' : '-';
+        }
+        result += getRandomGlitchChar();
     }
-    
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-    
-    const encrypted = encryptNumber(days) + ':' + 
-                      encryptNumber(hours) + ':' + 
-                      encryptNumber(minutes) + ':' + 
-                      encryptNumber(seconds);
-    
-    document.getElementById('timer-display').textContent = encrypted;
+    return result;
 }
 
-// Aggiorna il timer ogni secondo
-setInterval(updateEncryptedTimer, 1000);
-updateEncryptedTimer();
+// Aggiorna il display con effetto glitch
+function updateGlitchDisplay() {
+    if (!isHovering && glitchDisplay) {
+        // Crea effetto di cambio graduale
+        const newText = generateGlitchString();
+        glitchDisplay.textContent = newText;
+        
+        // Aggiungi occasionalmente uno "scatto" extra
+        if (Math.random() > 0.9) {
+            setTimeout(function() {
+                if (!isHovering && glitchDisplay) {
+                    glitchDisplay.textContent = generateGlitchString();
+                }
+            }, 30);
+        }
+    }
+}
+
+// Velocità variabile per effetto più organico
+function scheduleNextUpdate() {
+    // Intervallo casuale tra 40ms e 120ms
+    const interval = Math.random() * 80 + 40;
+    setTimeout(function() {
+        updateGlitchDisplay();
+        scheduleNextUpdate();
+    }, interval);
+}
+
+// Eventi hover
+const glitchCode = document.getElementById('glitch-code');
+if (glitchCode) {
+    glitchCode.addEventListener('mouseenter', function() {
+        isHovering = true;
+    });
+    
+    glitchCode.addEventListener('mouseleave', function() {
+        isHovering = false;
+    });
+    
+    // Touch support
+    glitchCode.addEventListener('touchstart', function() {
+        isHovering = true;
+    }, { passive: true });
+    
+    glitchCode.addEventListener('touchend', function() {
+        setTimeout(function() {
+            isHovering = false;
+        }, 1500); // Mantieni visibile per 1.5s dopo il touch
+    }, { passive: true });
+}
+
+// Avvia l'effetto
+updateGlitchDisplay();
+scheduleNextUpdate();
 
 // ============================================
 // GLITCH PESANTE OCCASIONALE SUL LOGO

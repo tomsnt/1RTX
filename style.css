@@ -112,31 +112,61 @@ body {
     }
 }
 
-/* Timer cifrato */
-#encrypted-timer {
+/* Codice glitch */
+#glitch-code {
     position: fixed;
     top: calc(50% + 180px);
     left: 50%;
     transform: translateX(-50%);
     z-index: 200;
-    pointer-events: none;
     text-align: center;
+    text-decoration: none;
+    cursor: pointer;
 }
 
-#timer-display {
-    font-family: 'Arial', 'Helvetica', sans-serif;
+#glitch-display {
+    font-family: 'Courier New', 'Monaco', monospace;
     font-size: 18px;
     font-weight: bold;
-    letter-spacing: 2px;
+    letter-spacing: 3px;
     color: #fff;
     text-shadow: 
         0 0 10px rgba(255, 255, 255, 0.9),
         0 0 20px rgba(255, 255, 255, 0.5),
-        0 0 30px rgba(255, 255, 255, 0.3);
-    animation: timerFlicker 0.15s infinite;
+        0 0 30px rgba(255, 255, 255, 0.3),
+        2px 0 0 rgba(255, 0, 0, 0.3),
+        -2px 0 0 rgba(0, 255, 255, 0.3);
+    animation: glitchFlicker 0.08s infinite;
     opacity: 0.95;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+    display: inline-block;
+    transition: opacity 0.2s ease;
+}
+
+#reveal-text {
+    font-family: 'Arial', 'Helvetica', sans-serif;
+    font-size: 18px;
+    font-weight: bold;
+    letter-spacing: 3px;
+    color: #fff;
+    text-shadow: 
+        0 0 15px rgba(255, 255, 255, 1),
+        0 0 30px rgba(255, 255, 255, 0.7),
+        0 0 45px rgba(255, 255, 255, 0.5);
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    white-space: nowrap;
+}
+
+#glitch-code:hover #glitch-display {
+    opacity: 0;
+}
+
+#glitch-code:hover #reveal-text {
+    opacity: 1;
 }
 
 /* Mobile */
@@ -145,22 +175,63 @@ body {
         top: 40%;
     }
     
-    #encrypted-timer {
+    #glitch-code {
         top: auto;
         bottom: 20vh;
     }
     
-    #timer-display {
+    #glitch-display,
+    #reveal-text {
         font-size: 14px;
         letter-spacing: 1px;
     }
 }
 
-@keyframes timerFlicker {
-    0%, 100% { opacity: 0.95; }
-    25% { opacity: 0.9; }
-    50% { opacity: 1; }
-    75% { opacity: 0.85; }
+@keyframes glitchFlicker {
+    0% { 
+        opacity: 0.95;
+        transform: translate(0, 0) skewX(0deg);
+    }
+    10% { 
+        opacity: 1;
+        transform: translate(-1px, 0) skewX(0.5deg);
+    }
+    20% { 
+        opacity: 0.85;
+        transform: translate(1px, 1px) skewX(-0.3deg);
+    }
+    30% { 
+        opacity: 0.95;
+        transform: translate(0, -1px) skewX(0.2deg);
+    }
+    40% { 
+        opacity: 0.9;
+        transform: translate(1px, 0) skewX(-0.5deg);
+    }
+    50% { 
+        opacity: 1;
+        transform: translate(-1px, 1px) skewX(0.3deg);
+    }
+    60% { 
+        opacity: 0.88;
+        transform: translate(0, 0) skewX(-0.2deg);
+    }
+    70% { 
+        opacity: 0.95;
+        transform: translate(1px, -1px) skewX(0.4deg);
+    }
+    80% { 
+        opacity: 0.92;
+        transform: translate(-1px, 0) skewX(-0.3deg);
+    }
+    90% { 
+        opacity: 0.98;
+        transform: translate(0, 1px) skewX(0.1deg);
+    }
+    100% { 
+        opacity: 0.95;
+        transform: translate(0, 0) skewX(0deg);
+    }
 }
 
 /* Canvas del rumore granulare - MOLTO più visibile */
