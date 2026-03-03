@@ -512,8 +512,6 @@ scheduleNextUpdate();
 // GLITCH PESANTE OCCASIONALE SUL LOGO
 // ============================================
 
-const centerLogo = document.getElementById('center-logo');
-
 function triggerHeavyGlitch() {
     // Probabilità bassa di glitch (circa ogni 3-8 secondi)
     const nextGlitch = Math.random() * 5000 + 3000;
